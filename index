@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOI MAZE — Blockchain Learning Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #050a0f;
+    --panel: #080f17;
+    --border: #0ff3;
+    --accent: #00f5ff;
+    --accent2: #7b00ff;
+    --accent3: #ff006e;
+    --warn: #ffb800;
+    --correct: #00ff9d;
+    --wrong: #ff3860;
+    --text: #c8e0f0;
+    --dim: #4a6878;
+    --glow: 0 0 12px #00f5ff88, 0 0 30px #00f5ff33;
+    --glow2: 0 0 12px #7b00ff88;
+    --cell: 40px;
+    /* Power-up colors */
+    --pu-freeze: #00cfff;
+    --pu-hint: #ffe600;
+    --pu-boost: #ff6b35;
+    --pu-reveal: #b400ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, #00000018 2px, #00000018 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: linear-gradient(#0ff08 1px, transparent 1px), linear-gradient(90deg, #0ff08 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.15;
+    pointer-events: none;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 10; transition: opacity 0.5s;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  /* ─── START ─── */
+  #startScreen { background: radial-gradient(ellipse at 50% 30%, #0a1a2a 0%, #050a0f 70%); gap: 20px; }
+
+  .logo-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(42px, 8vw, 80px);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-shadow: var(--glow), 0 0 60px #00f5ff44;
+    animation: pulse 3s ease-in-out infinite;
+  }
+  .logo-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(10px, 1.8vw, 13px);
+    color: var(--dim);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    text-align: center;
+  }
+  @keyframes pulse {
+    0%,100% { text-shadow: var(--glow), 0 0 60px #00f5ff44; }
+    50% { text-shadow: 0 0 20px #00f5ffcc, 0 0 60px #00f5ff88, 0 0 100px #00f5ff44; }
+  }
+
+  .start-form {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+    width: 340px;
+  }
+  .cyber-input {
+    width: 100%;
+    background: #0a1520;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    outline: none;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    transition: box-shadow 0.2s;
+  }
+  .cyber-input:focus { box-shadow: var(--glow); }
+  .cyber-input::placeholder { color: var(--dim); }
+
+  .difficulty-row {
+    display: flex; gap: 8px; width: 100%;
+  }
+  .diff-btn {
+    flex: 1;
+    background: #0a1520;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    padding: 8px 4px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .diff-btn.active-easy { border-color: var(--correct); color: var(--correct); background: #001a0d; box-shadow: 0 0 8px #00ff9d44; }
+  .diff-btn.active-normal { border-color: var(--accent); color: var(--accent); background: #00141a; box-shadow: 0 0 8px #00f5ff44; }
+  .diff-btn.active-hard { border-color: var(--wrong); color: var(--wrong); background: #1a0005; box-shadow: 0 0 8px #ff386044; }
+
+  .cyber-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 13px 24px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .cyber-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.2s; z-index: -1;
+  }
+  .cyber-btn:hover { color: var(--bg); box-shadow: var(--glow); }
+  .cyber-btn:hover::before { transform: scaleX(1); }
+  .cyber-btn.secondary { border-color: var(--accent2); color: var(--accent2); }
+  .cyber-btn.secondary::before { background: var(--accent2); }
+  .cyber-btn.secondary:hover { box-shadow: var(--glow2); }
+  .cyber-btn.danger { border-color: var(--wrong); color: var(--wrong); }
+  .cyber-btn.danger::before { background: var(--wrong); }
+
+  .divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 4px 0; opacity: 0.4;
+  }
+
+  /* ─── GAME SCREEN ─── */
+  #gameScreen {
+    flex-direction: row; align-items: stretch;
+    justify-content: flex-start;
+    background: var(--bg); padding: 0;
+  }
+  #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; }
+
+  /* ─── HUD ─── */
+  .hud {
+    width: 290px; min-width: 220px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 14px 12px; gap: 10px;
+    overflow-y: auto; flex-shrink: 0;
+  }
+  .hud-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; color: var(--dim);
+    letter-spacing: 0.3em; text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .hud-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px; font-weight: 700;
+    color: var(--accent); text-shadow: var(--glow);
+  }
+  .hud-timer { color: var(--warn); text-shadow: 0 0 10px #ffb80066; }
+  .hud-timer.urgent { color: var(--wrong); animation: blink 0.5s step-end infinite; }
+  .hud-timer.frozen { color: var(--pu-freeze); text-shadow: 0 0 12px #00cfffaa; animation: frozenPulse 0.8s ease-in-out infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes frozenPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  .progress-bar-container {
+    background: #0a1520; border: 1px solid var(--border);
+    height: 8px; position: relative; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.4s ease; box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ─── CATEGORY BADGE ─── */
+  .cat-badge {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* ─── POWER-UPS HUD ─── */
+  .powerups-row {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .pu-chip {
+    display: flex; align-items: center; gap: 5px;
+    background: #0a1520;
+    border: 1px solid currentColor;
+    padding: 5px 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    user-select: none;
+  }
+  .pu-chip:hover { opacity: 0.85; transform: translateY(-1px); }
+  .pu-chip:disabled, .pu-chip.empty { opacity: 0.25; cursor: default; }
+  .pu-chip .pu-count {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px; font-weight: 700;
+  }
+  .pu-freeze { color: var(--pu-freeze); }
+  .pu-hint { color: var(--pu-hint); }
+  .pu-boost { color: var(--pu-boost); }
+  .pu-reveal { color: var(--pu-reveal); }
+
+  /* ─── QUESTION PANEL ─── */
+  .question-panel {
+    background: #080f17;
+    border: 1px solid var(--accent);
+    padding: 12px; flex: 1;
+    display: flex; flex-direction: column; gap: 8px;
+    box-shadow: inset 0 0 20px #00f5ff0a;
+    min-height: 0;
+  }
+  .question-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px; font-weight: 600;
+    color: var(--text); line-height: 1.5; min-height: 50px;
+  }
+  .answer-btn {
+    width: 100%;
+    background: #0a1520;
+    border: 1px solid var(--dim);
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px; font-weight: 600;
+    text-align: left; cursor: pointer;
+    transition: all 0.15s;
+    display: flex; gap: 7px; align-items: flex-start;
+  }
+  .answer-btn:hover:not(:disabled) { border-color: var(--accent); background: #0d1f30; color: var(--accent); }
+  .answer-btn.correct { border-color: var(--correct); background: #001a0d; color: var(--correct); }
+  .answer-btn.wrong { border-color: var(--wrong); background: #1a0005; color: var(--wrong); }
+  .answer-btn.eliminated { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
+  .answer-btn:disabled { cursor: default; }
+  .answer-key { font-family: 'Share Tech Mono', monospace; color: var(--accent2); flex-shrink: 0; font-size: 11px; margin-top: 1px; }
+
+  .feedback-msg {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; text-align: center;
+    padding: 5px; min-height: 20px;
+  }
+  .feedback-msg.correct { color: var(--correct); }
+  .feedback-msg.wrong { color: var(--wrong); }
+  .fact-box {
+    background: #050d14;
+    border-left: 3px solid var(--accent2);
+    padding: 7px 9px;
+    font-size: 11px; color: var(--dim);
+    line-height: 1.5; display: none;
+  }
+  .fact-box.show { display: block; }
+
+  /* ─── MOBILE OVERLAY ─── */
+  .q-overlay {
+    position: fixed; inset: 0;
+    background: #050a0fee;
+    z-index: 500;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .q-overlay.show { display: flex; }
+  .q-card {
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    max-width: 500px; width: 100%;
+    padding: 20px; box-shadow: var(--glow);
+    display: flex; flex-direction: column; gap: 12px;
+    max-height: 90vh; overflow-y: auto;
+  }
+
+  /* ─── POWER-UP POPUP ─── */
+  .pu-popup {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 600;
+    background: var(--panel);
+    border: 2px solid var(--warn);
+    padding: 20px 28px;
+    text-align: center;
+    box-shadow: 0 0 30px #ffb80066;
+    display: none;
+    flex-direction: column; gap: 10px;
+    animation: popIn 0.3s ease;
+  }
+  .pu-popup.show { display: flex; }
+  @keyframes popIn {
+    from { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  .pu-popup-icon { font-size: 36px; }
+  .pu-popup-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px; font-weight: 700; color: var(--warn);
+  }
+  .pu-popup-desc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; color: var(--dim);
+  }
+
+  /* ─── FINISH SCREEN ─── */
+  #finishScreen {
+    background: radial-gradient(ellipse at 50% 40%, #0d1a0d 0%, #050a0f 70%);
+    gap: 16px; padding: 20px;
+  }
+  .finish-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 6vw, 56px); font-weight: 900;
+    color: var(--correct); text-shadow: 0 0 20px var(--correct);
+    text-align: center;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; width: min(680px, 90vw);
+  }
+  .stat-card {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 12px; text-align: center;
+  }
+  .stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px; font-weight: 700;
+    color: var(--accent); text-shadow: var(--glow);
+  }
+
+  /* ─── LEADERBOARD ─── */
+  .leaderboard {
+    width: min(680px, 90vw);
+    background: var(--panel); border: 1px solid var(--border); overflow: hidden;
+  }
+  .lb-header {
+    background: #0a1520; padding: 8px 14px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 0.3em; color: var(--dim);
+    display: grid; grid-template-columns: 36px 1fr 70px 60px 60px;
+  }
+  .lb-row {
+    padding: 9px 14px;
+    display: grid; grid-template-columns: 36px 1fr 70px 60px 60px;
+    border-top: 1px solid #ffffff08;
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    align-items: center; transition: background 0.2s;
+  }
+  .lb-row:hover { background: #0a1520; }
+  .lb-row.highlight { background: #001a20; border-left: 2px solid var(--accent); }
+  .lb-row.highlight-new { background: #00120a; border-left: 2px solid var(--correct); animation: newEntry 1s ease; }
+  @keyframes newEntry { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:none} }
+  .lb-rank { color: var(--accent2); font-size: 10px; }
+  .lb-rank.gold { color: #ffd700; }
+  .lb-rank.silver { color: #c0c0c0; }
+  .lb-rank.bronze { color: #cd7f32; }
+  .lb-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lb-time { color: var(--correct); text-align: right; }
+  .lb-score { color: var(--warn); text-align: right; }
+  .lb-diff { text-align: right; font-size: 10px; }
+
+  /* ─── FIREBASE STATUS ─── */
+  .fb-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .fb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+  .fb-dot.connected { background: var(--correct); box-shadow: 0 0 6px var(--correct); }
+  .fb-dot.error { background: var(--wrong); }
+  .fb-dot.loading { background: var(--warn); animation: blink 0.8s step-end infinite; }
+
+  /* ─── CATEGORY FILTER ─── */
+  .cat-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cat-filter-btn {
+    background: #0a1520; border: 1px solid var(--dim);
+    color: var(--dim); padding: 4px 10px;
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    letter-spacing: 0.15em; cursor: pointer; text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .cat-filter-btn.active { border-color: currentColor; }
+
+  /* ─── NOTIFICATION ─── */
+  .notif {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    z-index: 900;
+    font-family: 'Share Tech Mono', monospace; font-size: 13px;
+    padding: 9px 18px;
+    border: 1px solid var(--accent); background: var(--panel);
+    color: var(--accent); box-shadow: var(--glow);
+    pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .notif.show { opacity: 1; }
+  .notif.wrong-notif { border-color: var(--wrong); color: var(--wrong); box-shadow: 0 0 12px #ff386088; }
+  .notif.pu-notif { border-color: var(--warn); color: var(--warn); box-shadow: 0 0 12px #ffb80088; }
+
+  /* ─── MINI MAP ─── */
+  #miniMap { width: 100%; height: 90px; border: 1px solid var(--border); background: #05080f; }
+
+  /* ─── CANVAS WRAPPER ─── */
+  #canvasWrapper {
+    flex: 1; overflow: auto;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+  }
+
+  /* ─── LB SCREEN ─── */
+  #lbScreen {
+    gap: 14px; padding: 20px;
+    background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f);
+  }
+  .lb-screen-title {
+    font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900;
+    color: var(--accent2); text-shadow: var(--glow2);
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 720px) {
+    #gameScreen { flex-direction: column; }
+    .hud { width: 100%; min-width: 0; border-left: none; border-top: 1px solid var(--border); height: auto; max-height: 52vh; }
+    #canvasWrapper { max-height: 48vh; }
+    .question-panel { display: none; }
+    .q-overlay { display: none; }
+    .q-overlay.show { display: flex; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div class="screen" id="startScreen">
+  <div style="text-align:center;margin-bottom:6px;">
+    <div class="logo-title">VOI MAZE</div>
+    <div class="logo-sub">blockchain learning // escape protocol v2.0</div>
+  </div>
+  <canvas id="charPreview" width="80" height="100" style="image-rendering:pixelated;"></canvas>
+  <div class="start-form">
+    <input class="cyber-input" id="playerName" placeholder="ENTER CALLSIGN" maxlength="20" autocomplete="off">
+    <div>
+      <div class="hud-label" style="margin-bottom:6px;">DIFFICULTY</div>
+      <div class="difficulty-row">
+        <button class="diff-btn active-normal" data-diff="normal" id="diffNormal">NORMAL</button>
+        <button class="diff-btn" data-diff="easy" id="diffEasy">EASY</button>
+        <button class="diff-btn" data-diff="hard" id="diffHard">HARD</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="cyber-btn" id="startBtn">INITIALIZE SEQUENCE</button>
+    <button class="cyber-btn secondary" id="lbBtn">VIEW LEADERBOARD</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+    <div class="fb-dot" id="fbDotStart"></div>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusStart">CHECKING CONNECTION...</span>
+  </div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px;text-align:center;line-height:1.8;">
+    ANSWER 20 QUESTIONS TO ESCAPE · COLLECT POWER-UPS IN THE MAZE
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen hidden" id="gameScreen">
+  <div id="canvasWrapper">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  <div class="hud">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="hud-label">OPERATIVE</div>
+        <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--text);font-weight:700;" id="hudName">—</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="hud-label">DIFFICULTY</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="hudDiff">—</div>
+      </div>
+    </div>
+    <div>
+      <div class="hud-label">ELAPSED TIME</div>
+      <div class="hud-value hud-timer" id="hudTimer">00:00</div>
+    </div>
+    <div>
+      <div class="hud-label">NODES UNLOCKED <span id="hudQCount" style="color:var(--accent)">0</span>/20</div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="hudProgress" style="width:0%"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div>
+        <div class="hud-label">ACCURACY</div>
+        <div class="hud-value" id="hudAccuracy" style="font-size:18px;">—</div>
+      </div>
+      <div>
+        <div class="hud-label">STREAK 🔥</div>
+        <div class="hud-value" id="hudStreak" style="font-size:18px;color:var(--warn);">0</div>
+      </div>
+    </div>
+    <div>
+      <div class="hud-label">POWER-UPS</div>
+      <div class="powerups-row" id="powerupsRow">
+        <button class="pu-chip pu-freeze" id="puFreeze" title="TIME FREEZE — Pause timer for 15s">
+          ❄️ <span class="pu-count" id="puFreezeCount">0</span>
+        </button>
+        <button class="pu-chip pu-hint" id="puHint" title="HINT — Eliminate 2 wrong answers">
+          💡 <span class="pu-count" id="puHintCount">0</span>
+        </button>
+        <button class="pu-chip pu-boost" id="puBoost" title="BOOST — Pass through 1 wall">
+          ⚡ <span class="pu-count" id="puBoostCount">0</span>
+        </button>
+        <button class="pu-chip pu-reveal" id="puReveal" title="REVEAL — Show full map for 5s">
+          👁️ <span class="pu-count" id="puRevealCount">0</span>
+        </button>
+      </div>
+    </div>
+    <div>
+      <div class="hud-label">MINI MAP</div>
+      <canvas id="miniMap"></canvas>
+    </div>
+    <div class="question-panel" id="questionPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="hud-label">ACTIVE CHALLENGE</div>
+        <div id="qCatBadge" class="cat-badge" style="display:none;"></div>
+      </div>
+      <div class="question-text" id="questionText">Approach a glowing node to receive a challenge.</div>
+      <div id="answersContainer"></div>
+      <div class="feedback-msg" id="feedbackMsg"></div>
+      <div class="fact-box" id="factBox"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE QUESTION OVERLAY -->
+<div class="q-overlay" id="qOverlay">
+  <div class="q-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="hud-label">CHALLENGE NODE</div>
+      <div id="qOverlayCatBadge" class="cat-badge" style="display:none;"></div>
+    </div>
+    <div class="question-text" id="qOverlayText"></div>
+    <div id="qOverlayAnswers"></div>
+    <div class="feedback-msg" id="qOverlayFeedback"></div>
+    <div class="fact-box" id="qOverlayFact"></div>
+  </div>
+</div>
+
+<!-- POWER-UP PICKUP POPUP -->
+<div class="pu-popup" id="puPopup">
+  <div class="pu-popup-icon" id="puPopupIcon">❄️</div>
+  <div class="pu-popup-title" id="puPopupTitle">POWER-UP COLLECTED</div>
+  <div class="pu-popup-desc" id="puPopupDesc">TIME FREEZE acquired</div>
+</div>
+
+<!-- FINISH SCREEN -->
+<div class="screen hidden" id="finishScreen">
+  <div class="finish-title">ESCAPED!</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.3em;">VOI BLOCKCHAIN MASTERY CONFIRMED</div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="hud-label">TIME</div>
+      <div class="stat-val" id="finishTime">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="hud-label">ACCURACY</div>
+      <div class="stat-val" id="finishAccuracy">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="hud-label">STREAK</div>
+      <div class="stat-val" id="finishStreak" style="color:var(--warn);">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="hud-label">RANK</div>
+      <div class="stat-val" id="finishRank" style="color:var(--warn);">—</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="fb-dot" id="fbDotFinish"></div>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusFinish">Saving to leaderboard...</span>
+  </div>
+  <div class="leaderboard" style="max-height:32vh;overflow-y:auto;">
+    <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">ACC</span><span style="text-align:right">DIFF</span></div>
+    <div id="lbBody"></div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <button class="cyber-btn" id="replayBtn" style="width:160px;">REPLAY</button>
+    <button class="cyber-btn secondary" id="lbBtnFinish" style="width:160px;">LEADERBOARD</button>
+    <button class="cyber-btn danger" id="shareBtn" style="width:160px;">COPY RESULT</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD SCREEN -->
+<div class="screen hidden" id="lbScreen" style="gap:14px;padding:20px;">
+  <div class="lb-screen-title">LEADERBOARD</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="fb-dot" id="fbDotLb"></div>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusLb">—</span>
+  </div>
+  <div class="cat-filters" id="lbFilters">
+    <button class="cat-filter-btn active" data-diff="all" style="color:var(--accent);border-color:var(--accent);">ALL</button>
+    <button class="cat-filter-btn" data-diff="easy" style="color:var(--correct);">EASY</button>
+    <button class="cat-filter-btn" data-diff="normal" style="color:var(--accent);">NORMAL</button>
+    <button class="cat-filter-btn" data-diff="hard" style="color:var(--wrong);">HARD</button>
+  </div>
+  <div class="leaderboard" style="max-height:55vh;overflow-y:auto;">
+    <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">ACC</span><span style="text-align:right">DIFF</span></div>
+    <div id="lbScreenBody"></div>
+  </div>
+  <button class="cyber-btn" id="lbBackBtn" style="width:200px;">BACK</button>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  VOI MAZE v2.0 — Full Expanded Engine
+// ═══════════════════════════════════════════════════════════════
+
+// ── FIREBASE CONFIG ─────────────────────────────────────────────
+// Paste your Firebase config here after following FIREBASE_SETUP.md
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  databaseURL: "PASTE_YOUR_DATABASE_URL",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  // add full config from Firebase console
+};
+
+// ── FIREBASE SDK (loaded dynamically) ──────────────────────────
+let db = null;
+let fbConnected = false;
+let allLeaderboardEntries = [];
+
+async function initFirebase() {
+  try {
+    // Only attempt if config looks real
+    if (!FIREBASE_CONFIG.databaseURL || FIREBASE_CONFIG.databaseURL.includes('PASTE')) {
+      setFbStatus('all', 'LOCAL MODE (no Firebase config)', 'dim');
+      return;
+    }
+    setFbStatus('all', 'CONNECTING...', 'loading');
+
+    // Dynamically load Firebase SDK
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+    const { getDatabase, ref, push, onValue, query, orderByChild, limitToLast }
+      = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+
+    const app = initializeApp(FIREBASE_CONFIG);
+    db = getDatabase(app);
+    fbConnected = true;
+
+    // Store Firebase refs globally for use later
+    window._fbRef = ref;
+    window._fbPush = push;
+    window._fbOnValue = onValue;
+    window._fbQuery = query;
+    window._fbOrderByChild = orderByChild;
+    window._fbLimitToLast = limitToLast;
+
+    setFbStatus('all', 'GLOBAL LEADERBOARD ACTIVE', 'connected');
+
+    // Subscribe to leaderboard
+    const lbRef = query(ref(db, 'leaderboard'), orderByChild('score'), limitToLast(100));
+    onValue(lbRef, snap => {
+      const data = snap.val() || {};
+      allLeaderboardEntries = Object.values(data);
+      allLeaderboardEntries.sort((a, b) => b.accuracy - a.accuracy || a.time - b.time);
+    });
+
+  } catch (e) {
+    console.warn('Firebase init failed:', e);
+    setFbStatus('all', 'LOCAL MODE (Firebase unavailable)', 'error');
+  }
+}
+
+function setFbStatus(target, msg, dotState) {
+  const ids = target === 'all'
+    ? ['fbDotStart','fbDotFinish','fbDotLb']
+    : [`fbDot${target}`];
+  const msgIds = { Start:'fbStatusStart', Finish:'fbStatusFinish', Lb:'fbStatusLb' };
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'fb-dot ' + dotState;
+  });
+  Object.entries(msgIds).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if (el && (target === 'all')) el.textContent = msg;
+  });
+}
+
+async function saveToFirebase(entry) {
+  if (!fbConnected || !db) {
+    saveToLocalStorage(entry);
+    return;
+  }
+  try {
+    await window._fbPush(window._fbRef(db, 'leaderboard'), entry);
+    setFbStatus('Finish', 'SAVED TO GLOBAL LEADERBOARD ✓', 'connected');
+  } catch (e) {
+    console.warn('Firebase save failed, falling back to localStorage:', e);
+    saveToLocalStorage(entry);
+    setFbStatus('Finish', 'SAVED LOCALLY (Firebase write failed)', 'error');
+  }
+}
+
+// ── LOCAL STORAGE FALLBACK ──────────────────────────────────────
+function saveToLocalStorage(entry) {
+  const lb = getLocalLeaderboard();
+  lb.push(entry);
+  lb.sort((a, b) => b.accuracy - a.accuracy || a.time - b.time);
+  localStorage.setItem('voi_leaderboard_v2', JSON.stringify(lb.slice(0, 100)));
+}
+
+function getLocalLeaderboard() {
+  try { return JSON.parse(localStorage.getItem('voi_leaderboard_v2')) || []; }
+  catch { return []; }
+}
+
+function getLeaderboard(diffFilter) {
+  const src = fbConnected && allLeaderboardEntries.length
+    ? allLeaderboardEntries
+    : getLocalLeaderboard();
+  return diffFilter && diffFilter !== 'all'
+    ? src.filter(e => e.difficulty === diffFilter)
+    : src;
+}
+
+// ── EXTERNAL QUESTIONS LOADER ───────────────────────────────────
+let QUESTIONS = [];
+let CATEGORIES = {};
+
+async function loadQuestions() {
+  try {
+    const res = await fetch('questions.json');
+    const data = await res.json();
+    QUESTIONS = data.questions;
+    CATEGORIES = data.categories;
+    console.log(`Loaded ${QUESTIONS.length} questions from questions.json`);
+  } catch (e) {
+    console.warn('Could not load questions.json, using built-in fallback:', e);
+    QUESTIONS = FALLBACK_QUESTIONS;
+    CATEGORIES = FALLBACK_CATEGORIES;
+  }
+}
+
+// ── FALLBACK QUESTIONS (if questions.json not found) ────────────
+const FALLBACK_CATEGORIES = {
+  tokenomics: { label: "Tokenomics", color: "#00f5ff" },
+  consensus:  { label: "Consensus",  color: "#7b00ff" },
+  governance: { label: "Governance", color: "#ff006e" },
+  ecosystem:  { label: "Ecosystem",  color: "#00ff9d" },
+  technology: { label: "Technology", color: "#ffb800" },
+  community:  { label: "Community",  color: "#ff6b35" },
+};
+const FALLBACK_QUESTIONS = [
+  { id:"q001", category:"tokenomics", difficulty:1, q:"What percentage of VOI tokens are allocated to the community?", opts:["50%","60%","75%","90%"], a:2, fact:"VOI allocates 75% of all tokens to the community — one of the highest community allocations in blockchain history." },
+  { id:"q002", category:"consensus",  difficulty:1, q:"What type of consensus mechanism does the Voi blockchain use?", opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"], a:1, fact:"Voi uses Proof of Stake — energy efficient and community-run." },
+  { id:"q003", category:"consensus",  difficulty:2, q:"How are block-proposing accounts selected in Voi's consensus?", opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"], a:2, fact:"A pseudorandom function runs on each account — more stake means higher selection probability." },
+  { id:"q004", category:"tokenomics", difficulty:1, q:"Voi's economic architecture spans how many years?", opts:["5","10","15","20"], a:3, fact:"20 years of carefully planned tokenomics to mitigate inflation and protect stakeholders." },
+  { id:"q005", category:"technology", difficulty:1, q:"What blockchain tech does Voi leverage for consensus?", opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"], a:1, fact:"Voi builds on Algorand's Pure PoS consensus — secure, fast, and decentralized." },
+  { id:"q006", category:"technology", difficulty:2, q:"What is Voi's approximate throughput?", opts:["500 TPS","1,000 TPS","5,000 TPS","Over 10,000 TPS"], a:3, fact:"Voi exceeds 10,000 TPS with 2.8-second block finality." },
+  { id:"q007", category:"technology", difficulty:1, q:"What is Voi's block time?", opts:["0.5s","2.8s","10s","30s"], a:1, fact:"2.8-second block times enable near-instant transaction finality." },
+  { id:"q008", category:"tokenomics", difficulty:2, q:"How much supply was used for private investor fundraising?", opts:["1.73%","10%","25%","40%"], a:0, fact:"Just 1.73% to private investors — community value is preserved." },
+  { id:"q009", category:"governance", difficulty:1, q:"Who governs Voi's ecosystem direction?", opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"], a:1, fact:"The Voi Council is elected by token holders — true democratic governance." },
+  { id:"q010", category:"tokenomics", difficulty:2, q:"What portion of tokens over 5 years go to ecosystem growth?", opts:["10%","25%","50%","75%"], a:2, fact:"50% over 5 years funds ecosystem development, grants, and community initiatives." },
+  { id:"q011", category:"ecosystem",  difficulty:2, q:"Which VCs back Voi Network?", opts:["a16z & Sequoia","Arrington Capital & Sonic Boom","Pantera & Multicoin","Paradigm & Coinbase"], a:1, fact:"Arrington Capital and Sonic Boom back Voi with minimal equity stake." },
+  { id:"q012", category:"ecosystem",  difficulty:2, q:"Which Web3 partner supports Voi's digital identity layer?", opts:["Chainlink","Galxe","The Graph","Ceramic"], a:1, fact:"Galxe enables modular AI, digital credentials, and seamless Web3 identity on Voi." },
+  { id:"q013", category:"technology", difficulty:1, q:"What does 'Layer 1 blockchain' mean for Voi?", opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"], a:1, fact:"L1 means Voi is fully sovereign — its own consensus, security, and settlement." },
+  { id:"q014", category:"consensus",  difficulty:3, q:"How many steps does Voi need to write one block per round?", opts:["1","2","3","5"], a:2, fact:"Three steps: block proposal, soft vote, certify vote — each with different random accounts." },
+  { id:"q015", category:"community",  difficulty:1, q:"What is Voi's core mission?", opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"], a:1, fact:"Built by You, Run by You, Owned by You — the Voi ethos." },
+  { id:"q016", category:"tokenomics", difficulty:2, q:"When are Voi's early incentives fully allocated?", opts:["After 10 years","Within the first 18 months","After 5 years","Gradually over 20 years"], a:1, fact:"Front-loaded within 18 months to kickstart network growth and validator participation." },
+  { id:"q017", category:"ecosystem",  difficulty:2, q:"Which platform hosted Voi's Incentivized Testnet?", opts:["Binance Launchpad","CoinList","Polkastarter","Uniswap"], a:1, fact:"CoinList hosted Voi's testnet, rewarding participants for battle-testing the network." },
+  { id:"q018", category:"governance", difficulty:2, q:"What can a Voi token holder do through governance?", opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"], a:1, fact:"Token holders elect the Council and submit proposals — real on-chain democratic power." },
+  { id:"q019", category:"community",  difficulty:1, q:"How many community projects launched on Voi early on?", opts:["5","15","Over 25","Over 100"], a:2, fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling — all community-built." },
+  { id:"q020", category:"tokenomics", difficulty:2, q:"What's the key benefit of Voi's low private investor allocation?", opts:["Higher launch price","Community retains majority ownership and governance power","Faster dev cycles","More exchange listings"], a:1, fact:"1.73% private allocation means the community can't be outvoted or dumped on by VCs." },
+  { id:"q021", category:"governance", difficulty:3, q:"How does anyone in Voi's ecosystem receive tokens for contributing?", opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"], a:1, fact:"Anyone can submit a proposal — if approved, they receive tokens for delivering value." },
+  { id:"q022", category:"consensus",  difficulty:3, q:"What does a node broadcast alongside a proposed block in Voi?", opts:["A zero-knowledge proof","Proof the PRF selected that account","Signatures from all validators","Hash of last 10 blocks"], a:1, fact:"Nodes broadcast the block plus cryptographic PRF output proving legitimate selection." },
+  { id:"q023", category:"community",  difficulty:2, q:"How does Voi approach blockchain development philosophy?", opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"], a:1, fact:"Resources flow to contributors who add real value — organic growth over corporate top-down." },
+  { id:"q024", category:"ecosystem",  difficulty:3, q:"What specifically does Galxe enable on Voi for users?", opts:["Free transactions","Digital credentials and Web3 identity management","Unlimited NFT minting","Cross-chain bridges to Solana"], a:1, fact:"Galxe enables verifiable on-chain reputations and credentials for Voi users." },
+  { id:"q025", category:"tokenomics", difficulty:3, q:"What prevents Voi's early investors from dumping tokens immediately?", opts:["No restrictions exist","Structured vesting periods","Tokens are permanently non-transferable","Community vote per transfer"], a:1, fact:"Structured vesting aligns investor incentives with long-term network success." },
+];
+
+// ── MAZE GENERATION ─────────────────────────────────────────────
+const MAZE_W = 15, MAZE_H = 15, CELL = 40;
+
+function generateMaze(w, h) {
+  const visited = Array.from({length:h}, () => new Array(w).fill(false));
+  const walls = Array.from({length:h}, () => Array.from({length:w}, () => ({right:true,bottom:true})));
+  function carve(x, y) {
+    visited[y][x] = true;
+    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}].sort(() => Math.random()-0.5);
+    for (const {dx,dy} of dirs) {
+      const nx=x+dx, ny=y+dy;
+      if (nx>=0&&nx<w&&ny>=0&&ny<h&&!visited[ny][nx]) {
+        if (dx===1) walls[y][x].right=false;
+        if (dx===-1) walls[y][nx].right=false;
+        if (dy===1) walls[y][x].bottom=false;
+        if (dy===-1) walls[ny][x].bottom=false;
+        carve(nx,ny);
+      }
+    }
+  }
+  carve(0,0);
+  return walls;
+}
+
+function bfsOrder(walls) {
+  const visited = Array.from({length:MAZE_H}, ()=>new Array(MAZE_W).fill(false));
+  const queue = [{x:0,y:0}]; visited[0][0]=true;
+  const order = [];
+  while(queue.length) {
+    const {x,y} = queue.shift();
+    order.push({x,y});
+    const w = walls[y][x];
+    const moves = [
+      {nx:x+1,ny:y,ok:!w.right},
+      {nx:x-1,ny:y,ok:x>0&&!walls[y][x-1].right},
+      {nx:x,ny:y+1,ok:!w.bottom},
+      {nx:x,ny:y-1,ok:y>0&&!walls[y-1][x].bottom}
+    ];
+    for (const {nx,ny,ok} of moves) {
+      if (ok&&nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&!visited[ny][nx]) {
+        visited[ny][nx]=true; queue.push({x:nx,y:ny});
+      }
+    }
+  }
+  return order;
+}
+
+function placeNodes(walls) {
+  const order = bfsOrder(walls);
+  const nodes = [];
+  const step = Math.floor(order.length / 21);
+  for (let i=1; i<=20; i++) {
+    const cell = order[Math.min(i*step, order.length-1)];
+    nodes.push({x:cell.x, y:cell.y, answered:false, qIdx:i-1, isExit: i===20});
+  }
+  return nodes;
+}
+
+// Place power-ups randomly in the maze (not on nodes or start)
+function placePowerups(walls, nodes) {
+  const nodeSet = new Set(nodes.map(n=>`${n.x},${n.y}`));
+  nodeSet.add('0,0');
+  const order = bfsOrder(walls);
+  const candidates = order.filter(c => !nodeSet.has(`${c.x},${c.y}`));
+  const shuffled = candidates.sort(() => Math.random()-0.5);
+
+  const types = ['freeze','hint','boost','reveal'];
+  const powerups = [];
+  const count = { easy:6, normal:4, hard:2 }[state.difficulty] || 4;
+
+  for (let i=0; i<Math.min(count, shuffled.length); i++) {
+    powerups.push({
+      x: shuffled[i].x, y: shuffled[i].y,
+      type: types[i % types.length],
+      collected: false,
+    });
+  }
+  return powerups;
+}
+
+// ── GAME STATE ──────────────────────────────────────────────────
+let state = {
+  screen: 'start',
+  playerName: '',
+  difficulty: 'normal',
+  maze: null, nodes: [], powerups: [],
+  questions: [],
+  player: { x:0, y:0 },
+  timer: 0,
+  timerInterval: null,
+  correct: 0, wrong: 0, totalAnswered: 0,
+  streak: 0, maxStreak: 0,
+  activeNode: null, questionActive: false, finished: false,
+  visibleCells: new Set(),
+  keys: {},
+  lastMoveTime: 0,
+  animFrame: null,
+  // Power-up state
+  powerupInventory: { freeze:0, hint:0, boost:0, reveal:0 },
+  frozen: false, freezeEnd: 0,
+  boostActive: false,
+  revealed: false, revealEnd: 0,
+  activeHintEliminated: [],
+};
+
+// ── CANVAS ──────────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const miniMapCanvas = document.getElementById('miniMap');
+const miniCtx = miniMapCanvas.getContext('2d');
+
+function resizeCanvas() {
+  const wrapper = document.getElementById('canvasWrapper');
+  const maxW = wrapper.clientWidth, maxH = wrapper.clientHeight;
+  const dw = MAZE_W*CELL+2, dh = MAZE_H*CELL+2;
+  const scale = Math.min(maxW/dw, maxH/dh, 1);
+  canvas.width = dw; canvas.height = dh;
+  canvas.style.width = (dw*scale)+'px';
+  canvas.style.height = (dh*scale)+'px';
+}
+
+// ── DRAWING ──────────────────────────────────────────────────────
+let time = 0;
+
+const PU_ICONS = { freeze:'❄️', hint:'💡', boost:'⚡', reveal:'👁️' };
+const PU_COLORS = { freeze:'#00cfff', hint:'#ffe600', boost:'#ff6b35', reveal:'#b400ff' };
+
+function drawMaze() {
+  ctx.fillStyle = '#050a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const walls = state.maze;
+  const vis = state.visibleCells;
+  const fullReveal = state.revealed && Date.now() < state.revealEnd;
+
+  // Floors
+  for (let y=0; y<MAZE_H; y++) {
+    for (let x=0; x<MAZE_W; x++) {
+      const key = `${x},${y}`;
+      if (!vis.has(key) && !fullReveal) { continue; }
+      const cx=x*CELL+1, cy=y*CELL+1;
+      ctx.fillStyle = vis.has(key) ? '#090f1a' : '#060c12';
+      ctx.fillRect(cx,cy,CELL,CELL);
+      ctx.strokeStyle = '#0a1520'; ctx.lineWidth=0.5;
+      ctx.strokeRect(cx,cy,CELL,CELL);
+    }
+  }
+
+  // Walls
+  for (let y=0; y<MAZE_H; y++) {
+    for (let x=0; x<MAZE_W; x++) {
+      const key = `${x},${y}`;
+      if (!vis.has(key) && !fullReveal) continue;
+      const cx=x*CELL+1, cy=y*CELL+1;
+      const w=walls[y][x];
+      const wallCol = state.frozen ? '#00cfff' : '#00f5ff';
+      if (y===0) drawWall(cx,cy,cx+CELL,cy,wallCol);
+      if (x===0) drawWall(cx,cy,cx,cy+CELL,wallCol);
+      if (w.right) drawWall(cx+CELL,cy,cx+CELL,cy+CELL,wallCol);
+      if (w.bottom) drawWall(cx,cy+CELL,cx+CELL,cy+CELL,wallCol);
+    }
+  }
+
+  // Power-ups
+  for (const pu of state.powerups) {
+    if (pu.collected) continue;
+    const key=`${pu.x},${pu.y}`;
+    if (!vis.has(key) && !fullReveal) continue;
+    const px=pu.x*CELL+CELL/2+1, py=pu.y*CELL+CELL/2+1;
+    const bob = Math.sin(time*0.08+pu.x+pu.y)*3;
+    const col=PU_COLORS[pu.type];
+    ctx.save();
+    ctx.shadowColor=col; ctx.shadowBlur=10+5*Math.abs(Math.sin(time*0.05));
+    ctx.font=`${14+bob}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(PU_ICONS[pu.type], px, py+bob);
+    ctx.restore();
+
+    // Ring
+    ctx.beginPath();
+    ctx.arc(px,py,14+bob,0,Math.PI*2);
+    ctx.strokeStyle=col+'55'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Question nodes
+  for (const node of state.nodes) {
+    const key=`${node.x},${node.y}`;
+    if (!vis.has(key) && !fullReveal) continue;
+    const nx=node.x*CELL+CELL/2+1, ny=node.y*CELL+CELL/2+1;
+
+    if (node.answered) {
+      ctx.beginPath();
+      ctx.arc(nx,ny,5,0,Math.PI*2);
+      ctx.fillStyle='#00ff9d'; ctx.fill();
+    } else {
+      const pulse=0.7+0.3*Math.sin(time*0.06+node.x+node.y);
+      const col=node.isExit?'#ff006e':'#7b00ff';
+      ctx.save();
+      ctx.shadowColor=col; ctx.shadowBlur=12*pulse;
+      ctx.beginPath(); ctx.arc(nx,ny,7*pulse,0,Math.PI*2);
+      ctx.fillStyle=col; ctx.fill();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(nx,ny,10+3*pulse,0,Math.PI*2);
+      ctx.strokeStyle=col+'66'; ctx.lineWidth=1; ctx.stroke();
+    }
+  }
+
+  drawPlayer();
+}
+
+function drawWall(x1,y1,x2,y2,col='#00f5ff') {
+  ctx.save();
+  ctx.shadowColor=col; ctx.shadowBlur=5;
+  ctx.strokeStyle=col; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const {x,y}=state.player;
+  const px=x*CELL+CELL/2+1, py=y*CELL+CELL/2+1;
+  const s=1.5;
+  ctx.save();
+
+  // Boost glow
+  if (state.boostActive) { ctx.shadowColor='#ff6b35'; ctx.shadowBlur=16; }
+  else if (state.frozen) { ctx.shadowColor='#00cfff'; ctx.shadowBlur=10; }
+  else { ctx.shadowColor='#00f5ff'; ctx.shadowBlur=8; }
+
+  ctx.fillStyle='#888';
+  ctx.fillRect(px-5*s,py-4*s,10*s,10*s);
+  ctx.fillStyle='#2a2a3a';
+  ctx.fillRect(px-8*s,py-3*s,3*s,7*s);
+  ctx.fillRect(px+5*s,py-3*s,3*s,7*s);
+  ctx.fillStyle='#111';
+  ctx.fillRect(px-7*s,py-2*s,2*s,2*s);
+  ctx.fillRect(px+6*s,py-2*s,2*s,2*s);
+  ctx.fillStyle='#c8a882';
+  ctx.fillRect(px-4*s,py-14*s,8*s,8*s);
+  ctx.fillStyle='#777';
+  ctx.fillRect(px-5*s,py-16*s,10*s,4*s);
+  ctx.fillRect(px-7*s,py-14*s,14*s,2*s);
+  ctx.fillStyle='#222';
+  ctx.fillRect(px-3*s,py-12*s,2*s,2*s);
+  ctx.fillRect(px+1*s,py-12*s,2*s,2*s);
+  ctx.fillStyle='#333';
+  ctx.fillRect(px-5*s,py+6*s,4*s,6*s);
+  ctx.fillRect(px+1*s,py+6*s,4*s,6*s);
+  ctx.restore();
+}
+
+function updateVisibility() {
+  const {x,y}=state.player;
+  const r = { easy:4, normal:3, hard:2 }[state.difficulty] || 3;
+  for (let dy=-r; dy<=r; dy++) {
+    for (let dx=-r; dx<=r; dx++) {
+      const nx=x+dx, ny=y+dy;
+      if (nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&dx*dx+dy*dy<=r*r) {
+        state.visibleCells.add(`${nx},${ny}`);
+      }
+    }
+  }
+}
+
+function drawMiniMap() {
+  const mc=miniMapCanvas, mw=mc.width, mh=mc.height;
+  miniCtx.fillStyle='#050a0f'; miniCtx.fillRect(0,0,mw,mh);
+  const cw=mw/MAZE_W, ch=mh/MAZE_H;
+  const fullReveal = state.revealed && Date.now()<state.revealEnd;
+
+  for (let y=0; y<MAZE_H; y++) {
+    for (let x=0; x<MAZE_W; x++) {
+      if (!state.visibleCells.has(`${x},${y}`) && !fullReveal) continue;
+      miniCtx.fillStyle='#0d1f30';
+      miniCtx.fillRect(x*cw,y*ch,cw-0.5,ch-0.5);
+    }
+  }
+  for (const pu of state.powerups) {
+    if (pu.collected) continue;
+    if (!state.visibleCells.has(`${pu.x},${pu.y}`) && !fullReveal) continue;
+    miniCtx.fillStyle=PU_COLORS[pu.type];
+    miniCtx.fillRect(pu.x*cw+cw*0.2,pu.y*ch+ch*0.2,cw*0.6,ch*0.6);
+  }
+  for (const node of state.nodes) {
+    if (!state.visibleCells.has(`${node.x},${node.y}`) && !fullReveal) continue;
+    miniCtx.fillStyle=node.answered?'#00ff9d':(node.isExit?'#ff006e':'#7b00ff');
+    miniCtx.fillRect(node.x*cw+cw*0.25,node.y*ch+ch*0.25,cw*0.5,ch*0.5);
+  }
+  miniCtx.fillStyle='#00f5ff';
+  miniCtx.fillRect(state.player.x*cw+cw*0.15,state.player.y*ch+ch*0.15,cw*0.7,ch*0.7);
+}
+
+// ── MOVEMENT ─────────────────────────────────────────────────────
+const KEY_MAP = {
+  ArrowUp:{dx:0,dy:-1}, ArrowDown:{dx:0,dy:1},
+  ArrowLeft:{dx:-1,dy:0}, ArrowRight:{dx:1,dy:0},
+  w:{dx:0,dy:-1}, s:{dx:0,dy:1}, a:{dx:-1,dy:0}, d:{dx:1,dy:0},
+  W:{dx:0,dy:-1}, S:{dx:0,dy:1}, A:{dx:-1,dy:0}, D:{dx:1,dy:0},
+};
+
+function canMove(x,y,dx,dy) {
+  if (state.boostActive) return true; // pass through walls
+  const w=state.maze;
+  if (dx===1) return !w[y][x].right;
+  if (dx===-1) return x>0&&!w[y][x-1].right;
+  if (dy===1) return !w[y][x].bottom;
+  if (dy===-1) return y>0&&!w[y-1][x].bottom;
+  return false;
+}
+
+function tryMove(dx,dy) {
+  if (state.questionActive||state.finished) return;
+  const {x,y}=state.player;
+  const nx=x+dx, ny=y+dy;
+  if (nx<0||nx>=MAZE_W||ny<0||ny>=MAZE_H) return;
+  if (!canMove(x,y,dx,dy)) return;
+
+  if (state.boostActive) {
+    state.boostActive=false;
+    showNotif('⚡ BOOST USED!', false);
+    updatePUDisplay();
+  }
+
+  state.player.x=nx; state.player.y=ny;
+  updateVisibility();
+  checkPowerupPickup();
+  checkNode();
+}
+
+function checkPowerupPickup() {
+  const {x,y}=state.player;
+  const pu=state.powerups.find(p=>p.x===x&&p.y===y&&!p.collected);
+  if (!pu) return;
+  pu.collected=true;
+  state.powerupInventory[pu.type]++;
+  updatePUDisplay();
+  showPUPopup(pu.type);
+}
+
+function checkNode() {
+  const {x,y}=state.player;
+  const node=state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
+  if (!node) return;
+  state.activeNode=node;
+  state.questionActive=true;
+  state.activeHintEliminated=[];
+  showQuestion(node.qIdx);
+}
+
+// ── POWER-UPS ────────────────────────────────────────────────────
+function usePowerup(type) {
+  if (state.powerupInventory[type] <= 0) return;
+  if (!state.questionActive && (type==='hint')) { showNotif('Use HINT when at a question node', true); return; }
+
+  state.powerupInventory[type]--;
+  updatePUDisplay();
+
+  switch(type) {
+    case 'freeze':
+      state.frozen=true;
+      state.freezeEnd=Date.now()+15000;
+      showNotif('❄️ TIME FROZEN for 15 seconds!');
+      setTimeout(()=>{ state.frozen=false; showNotif('❄️ Time freeze expired'); }, 15000);
+      break;
+
+    case 'hint':
+      if (!state.questionActive) break;
+      const q=state.questions[state.activeNode.qIdx];
+      const wrongIdxs=q.opts.map((_,i)=>i).filter(i=>i!==q.a&&!state.activeHintEliminated.includes(i));
+      const toElim=wrongIdxs.sort(()=>Math.random()-0.5).slice(0,2);
+      toElim.forEach(i=>state.activeHintEliminated.push(i));
+      applyHintElimination(toElim);
+      showNotif('💡 2 wrong answers eliminated!');
+      break;
+
+    case 'boost':
+      state.boostActive=true;
+      showNotif('⚡ WALL BOOST active — pass through next wall!');
+      break;
+
+    case 'reveal':
+      state.revealed=true;
+      state.revealEnd=Date.now()+5000;
+      showNotif('👁️ FULL MAP revealed for 5 seconds!');
+      setTimeout(()=>{ state.revealed=false; }, 5000);
+      break;
+  }
+}
+
+function applyHintElimination(indices) {
+  const isMobile=window.innerWidth<=720;
+  const ansEl=isMobile?document.getElementById('qOverlayAnswers'):document.getElementById('answersContainer');
+  if (!ansEl) return;
+  const btns=ansEl.querySelectorAll('.answer-btn');
+  indices.forEach(i=>{ if(btns[i]) btns[i].classList.add('eliminated'); });
+}
+
+function updatePUDisplay() {
+  const inv=state.powerupInventory;
+  ['freeze','hint','boost','reveal'].forEach(t=>{
+    const countEl=document.getElementById('pu'+t.charAt(0).toUpperCase()+t.slice(1)+'Count');
+    const chipEl=document.getElementById('pu'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(countEl) countEl.textContent=inv[t];
+    if(chipEl) { chipEl.disabled=inv[t]===0; chipEl.classList.toggle('empty',inv[t]===0); }
+  });
+}
+
+function showPUPopup(type) {
+  const popup=document.getElementById('puPopup');
+  const names={freeze:'TIME FREEZE',hint:'HINT CHIP',boost:'WALL BOOST',reveal:'MAP REVEAL'};
+  const descs={freeze:'Pauses the timer for 15 seconds',hint:'Eliminates 2 wrong answers',boost:'Pass through one wall',reveal:'See full map for 5 seconds'};
+  document.getElementById('puPopupIcon').textContent=PU_ICONS[type];
+  document.getElementById('puPopupTitle').textContent=names[type]+' COLLECTED';
+  document.getElementById('puPopupDesc').textContent=descs[type];
+  popup.classList.add('show');
+  setTimeout(()=>popup.classList.remove('show'), 2200);
+}
+
+// ── QUESTIONS ────────────────────────────────────────────────────
+const DIFF_CONFIG = {
+  easy:   { penalty:5,  pool:[1,2] },
+  normal: { penalty:10, pool:[1,2,3] },
+  hard:   { penalty:20, pool:[2,3] },
+};
+
+function getQuestionsForDifficulty() {
+  const conf=DIFF_CONFIG[state.difficulty];
+  let pool=QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
+  if (pool.length < 20) pool=[...QUESTIONS]; // fallback to all
+  return pool.sort(()=>Math.random()-0.5).slice(0,20);
+}
+
+function showQuestion(qIdx) {
+  const q=state.questions[qIdx];
+  if (!q) return;
+  const isMobile=window.innerWidth<=720;
+  const textEl=isMobile?document.getElementById('qOverlayText'):document.getElementById('questionText');
+  const ansEl=isMobile?document.getElementById('qOverlayAnswers'):document.getElementById('answersContainer');
+  const fbEl=isMobile?document.getElementById('qOverlayFeedback'):document.getElementById('feedbackMsg');
+  const factEl=isMobile?document.getElementById('qOverlayFact'):document.getElementById('factBox');
+
+  textEl.textContent=`[Q${qIdx+1}/20] ${q.q}`;
+  fbEl.textContent=''; fbEl.className='feedback-msg';
+  factEl.textContent=''; factEl.className='fact-box';
+
+  // Category badge
+  const cat=CATEGORIES[q.category]||{label:q.category,color:'#00f5ff'};
+  const badgeEl=isMobile?document.getElementById('qOverlayCatBadge'):document.getElementById('qCatBadge');
+  if (badgeEl) {
+    badgeEl.textContent=cat.label;
+    badgeEl.style.color=cat.color;
+    badgeEl.style.display='inline-block';
+  }
+
+  const keys=['A','B','C','D'];
+  ansEl.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='answer-btn';
+    btn.innerHTML=`<span class="answer-key">${keys[i]}</span><span>${opt}</span>`;
+    if (state.activeHintEliminated.includes(i)) btn.classList.add('eliminated');
+    btn.addEventListener('click',()=>handleAnswer(i,qIdx,btn,ansEl,fbEl,factEl,isMobile));
+    ansEl.appendChild(btn);
+  });
+
+  if (isMobile) document.getElementById('qOverlay').classList.add('show');
+}
+
+function handleAnswer(chosen,qIdx,clickedBtn,ansEl,fbEl,factEl,isMobile) {
+  const q=state.questions[qIdx];
+  const btns=ansEl.querySelectorAll('.answer-btn');
+  btns.forEach(b=>b.disabled=true);
+
+  const isCorrect=chosen===q.a;
+  btns[q.a].classList.add('correct');
+  if (!isCorrect) {
+    clickedBtn.classList.add('wrong');
+    state.wrong++;
+    state.streak=0;
+    const penalty=DIFF_CONFIG[state.difficulty].penalty;
+    state.timer+=penalty;
+    showNotif(`✗ INCORRECT — +${penalty}s PENALTY`, true);
+  } else {
+    state.correct++;
+    state.streak++;
+    if (state.streak>state.maxStreak) state.maxStreak=state.streak;
+    showNotif(state.streak>2?`✓ CORRECT — ${state.streak}x STREAK 🔥!`:'✓ CORRECT — NODE UNLOCKED!', false);
+  }
+
+  state.totalAnswered++;
+  updateHUD();
+  fbEl.textContent=isCorrect?'✓ CORRECT — PATH UNLOCKED':'✗ INCORRECT — PENALTY APPLIED';
+  fbEl.className='feedback-msg '+(isCorrect?'correct':'wrong');
+  factEl.textContent='◈ '+q.fact;
+  factEl.className='fact-box show';
+
+  const delay=isCorrect?1800:2500;
+  setTimeout(()=>{
+    state.activeNode.answered=true;
+    state.questionActive=false;
+    state.activeHintEliminated=[];
+    if (isMobile) document.getElementById('qOverlay').classList.remove('show');
+    // Reset desktop panel hint
+    const badgeEl=document.getElementById('qCatBadge');
+    if(badgeEl) badgeEl.style.display='none';
+    updateHUD();
+    if (state.activeNode.isExit) finishGame();
+  }, delay);
+}
+
+// ── HUD ──────────────────────────────────────────────────────────
+function updateHUD() {
+  const answered=state.nodes.filter(n=>n.answered).length;
+  document.getElementById('hudQCount').textContent=answered;
+  document.getElementById('hudProgress').style.width=(answered/20*100)+'%';
+  const acc=state.totalAnswered>0?Math.round(state.correct/state.totalAnswered*100)+'%':'—';
+  document.getElementById('hudAccuracy').textContent=acc;
+  document.getElementById('hudStreak').textContent=state.streak;
+  updatePUDisplay();
+}
+
+function formatTime(secs) {
+  const m=Math.floor(secs/60).toString().padStart(2,'0');
+  const s=(secs%60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+function startTimer() {
+  state.timerInterval=setInterval(()=>{
+    if (state.frozen && Date.now()<state.freezeEnd) return; // frozen!
+    state.timer++;
+    const el=document.getElementById('hudTimer');
+    el.textContent=formatTime(state.timer);
+    if (state.frozen) el.className='hud-value hud-timer frozen';
+    else if (state.timer>300) el.className='hud-value hud-timer urgent';
+    else el.className='hud-value hud-timer';
+  },1000);
+}
+
+// ── NOTIFICATION ─────────────────────────────────────────────────
+let notifTimeout;
+function showNotif(msg, isWrong=false, isPU=false) {
+  const el=document.getElementById('notif');
+  el.textContent=msg;
+  el.className='notif show'+(isWrong?' wrong-notif':isPU?' pu-notif':'');
+  clearTimeout(notifTimeout);
+  notifTimeout=setTimeout(()=>el.className='notif',2200);
+}
+
+// ── GAME LOOP ─────────────────────────────────────────────────────
+function gameLoop() {
+  time++;
+  const now=Date.now();
+  if (now-state.lastMoveTime>150&&!state.questionActive) {
+    for (const [key,dir] of Object.entries(KEY_MAP)) {
+      if (state.keys[key]) { tryMove(dir.dx,dir.dy); state.lastMoveTime=now; break; }
+    }
+  }
+  drawMaze();
+  drawMiniMap();
+  state.animFrame=requestAnimationFrame(gameLoop);
+}
+
+// ── INIT GAME ─────────────────────────────────────────────────────
+async function initGame(name, difficulty) {
+  state.playerName=name;
+  state.difficulty=difficulty;
+  state.maze=generateMaze(MAZE_W,MAZE_H);
+  state.questions=getQuestionsForDifficulty();
+  state.nodes=placeNodes(state.maze);
+  state.powerups=placePowerups(state.maze, state.nodes);
+  state.player={x:0,y:0};
+  state.timer=0; state.correct=0; state.wrong=0; state.totalAnswered=0;
+  state.streak=0; state.maxStreak=0;
+  state.activeNode=null; state.questionActive=false; state.finished=false;
+  state.visibleCells=new Set();
+  state.keys={}; state.lastMoveTime=0;
+  state.powerupInventory={freeze:0,hint:0,boost:0,reveal:0};
+  state.frozen=false; state.boostActive=false; state.revealed=false;
+  state.activeHintEliminated=[];
+
+  updateVisibility();
+
+  const diffLabels={easy:'EASY',normal:'NORMAL',hard:'HARD'};
+  const diffColors={easy:'var(--correct)',normal:'var(--accent)',hard:'var(--wrong)'};
+  document.getElementById('hudName').textContent=name.toUpperCase();
+  document.getElementById('hudDiff').textContent=diffLabels[difficulty];
+  document.getElementById('hudDiff').style.color=diffColors[difficulty];
+
+  showScreen('game');
+  resizeCanvas();
+  startTimer();
+  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+  gameLoop();
+
+  document.getElementById('questionText').textContent='Approach a glowing node to receive a challenge.';
+  document.getElementById('answersContainer').innerHTML='';
+  document.getElementById('feedbackMsg').textContent='';
+  document.getElementById('factBox').className='fact-box';
+  document.getElementById('qCatBadge').style.display='none';
+  updateHUD();
+}
+
+// ── FINISH ─────────────────────────────────────────────────────────
+async function finishGame() {
+  if (state.finished) return;
+  state.finished=true;
+  clearInterval(state.timerInterval);
+  cancelAnimationFrame(state.animFrame);
+
+  const acc=Math.round(state.correct/20*100);
+  const score=Math.round(acc*1000 - state.timer*2 + state.maxStreak*50);
+  const entry={
+    name: state.playerName,
+    time: state.timer,
+    accuracy: acc,
+    streak: state.maxStreak,
+    difficulty: state.difficulty,
+    score,
+    date: Date.now(),
+  };
+
+  document.getElementById('finishTime').textContent=formatTime(state.timer);
+  document.getElementById('finishAccuracy').textContent=acc+'%';
+  document.getElementById('finishStreak').textContent=state.maxStreak+'x';
+  showScreen('finish');
+  setFbStatus('Finish','SAVING...','loading');
+
+  await saveToFirebase(entry);
+
+  const lb=getLeaderboard('all');
+  const rank=lb.findIndex(e=>e.score===score&&e.name===entry.name)+1||lb.length;
+  document.getElementById('finishRank').textContent='#'+(rank||'?');
+  renderLeaderboard('lbBody', lb, entry);
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────────
+function renderLeaderboard(elId, lb, highlight) {
+  const el=document.getElementById(elId);
+  if (!lb||!lb.length) {
+    el.innerHTML='<div style="padding:14px;font-family:Share Tech Mono,monospace;font-size:11px;color:#4a6878;text-align:center;">NO ENTRIES YET</div>';
+    return;
+  }
+  const diffBadge={easy:'<span style="color:var(--correct);font-size:9px;">E</span>',normal:'<span style="color:var(--accent);font-size:9px;">N</span>',hard:'<span style="color:var(--wrong);font-size:9px;">H</span>'};
+  const rankClass=(i)=>i===0?'lb-rank gold':i===1?'lb-rank silver':i===2?'lb-rank bronze':'lb-rank';
+  el.innerHTML=lb.slice(0,50).map((e,i)=>{
+    const isHL=highlight&&e.name===highlight.name&&Math.abs(e.time-highlight.time)<2;
+    return `<div class="lb-row ${isHL?'highlight-new':''}">
+      <span class="${rankClass(i)}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span>
+      <span class="lb-name">${escapeHtml(e.name||'ANON')}</span>
+      <span class="lb-time">${formatTime(e.time||0)}</span>
+      <span class="lb-score">${e.accuracy||0}%</span>
+      <span class="lb-diff">${diffBadge[e.difficulty]||'—'}</span>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── SCREENS ───────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  const el=document.getElementById(name+'Screen');
+  if(el) el.classList.remove('hidden');
+  state.screen=name;
+}
+
+// ── CHARACTER PREVIEW ─────────────────────────────────────────────
+function drawCharPreview() {
+  const c=document.getElementById('charPreview');
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  const s=2, px=c.width/2, py=c.height/2+5;
+  ctx.fillStyle='#888'; ctx.fillRect(px-8*s,py-4*s,16*s,14*s);
+  ctx.fillStyle='#2a2a3a';
+  ctx.fillRect(px-12*s,py-2*s,4*s,10*s);
+  ctx.fillRect(px+8*s,py-2*s,4*s,10*s);
+  ctx.fillStyle='#111';
+  ctx.fillRect(px-11*s,py,2*s,2*s);
+  ctx.fillRect(px+10*s,py,2*s,2*s);
+  ctx.fillStyle='#c8a882'; ctx.fillRect(px-6*s,py-18*s,12*s,12*s);
+  ctx.fillStyle='#777';
+  ctx.fillRect(px-7*s,py-20*s,14*s,5*s);
+  ctx.fillRect(px-10*s,py-17*s,20*s,2*s);
+  ctx.fillStyle='#222';
+  ctx.fillRect(px-4*s,py-14*s,2*s,2*s);
+  ctx.fillRect(px+2*s,py-14*s,2*s,2*s);
+  ctx.fillStyle='#333';
+  ctx.fillRect(px-8*s,py+10*s,6*s,8*s);
+  ctx.fillRect(px+2*s,py+10*s,6*s,8*s);
+}
+
+// ── TOUCH / DPAD ──────────────────────────────────────────────────
+let touchStart=null;
+canvas.addEventListener('touchstart',e=>{ touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY}; e.preventDefault(); },{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!touchStart) return;
+  const dx=e.changedTouches[0].clientX-touchStart.x;
+  const dy=e.changedTouches[0].clientY-touchStart.y;
+  const adx=Math.abs(dx),ady=Math.abs(dy);
+  if(Math.max(adx,ady)<10) return;
+  if(adx>ady) tryMove(dx>0?1:-1,0); else tryMove(0,dy>0?1:-1);
+  touchStart=null; e.preventDefault();
+},{passive:false});
+
+function addDpad() {
+  if(document.getElementById('dpad')) return;
+  const dpad=document.createElement('div');
+  dpad.id='dpad';
+  dpad.style.cssText=`position:fixed;bottom:20px;right:20px;display:grid;grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px 44px;gap:4px;z-index:200;`;
+  [{dx:0,dy:-1,pos:'1/2',label:'↑'},{dx:-1,dy:0,pos:'2/1',label:'←'},{dx:1,dy:0,pos:'2/3',label:'→'},{dx:0,dy:1,pos:'3/2',label:'↓'}].forEach(({dx,dy,pos,label})=>{
+    const b=document.createElement('button');
+    b.textContent=label;
+    b.style.cssText=`grid-column:${pos.split('/')[1]};grid-row:${pos.split('/')[0]};background:#080f17;border:1px solid #00f5ff44;color:#00f5ff;font-size:20px;cursor:pointer;border-radius:4px;-webkit-tap-highlight-color:transparent;`;
+    b.addEventListener('touchstart',e=>{tryMove(dx,dy);e.preventDefault();},{passive:false});
+    b.addEventListener('click',()=>tryMove(dx,dy));
+    dpad.appendChild(b);
+  });
+  document.body.appendChild(dpad);
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key in KEY_MAP) {
+    state.keys[e.key]=true;
+    if(!state.questionActive){const dir=KEY_MAP[e.key];tryMove(dir.dx,dir.dy);state.lastMoveTime=Date.now();}
+    e.preventDefault();
+  }
+  // Number keys for power-ups during question
+  if(e.key==='1') usePowerup('freeze');
+  if(e.key==='2') usePowerup('hint');
+  if(e.key==='3') usePowerup('boost');
+  if(e.key==='4') usePowerup('reveal');
+});
+document.addEventListener('keyup',e=>{ state.keys[e.key]=false; });
+
+// ── DIFFICULTY BUTTONS ────────────────────────────────────────────
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const d=btn.dataset.diff;
+    state.difficulty=d;
+    document.querySelectorAll('.diff-btn').forEach(b=>b.className='diff-btn');
+    btn.className=`diff-btn active-${d}`;
+  });
+});
+
+// ── POWER-UP BUTTON BINDINGS ──────────────────────────────────────
+document.getElementById('puFreeze').addEventListener('click',()=>usePowerup('freeze'));
+document.getElementById('puHint').addEventListener('click',()=>usePowerup('hint'));
+document.getElementById('puBoost').addEventListener('click',()=>usePowerup('boost'));
+document.getElementById('puReveal').addEventListener('click',()=>usePowerup('reveal'));
+
+// ── UI BINDINGS ───────────────────────────────────────────────────
+document.getElementById('startBtn').addEventListener('click',async ()=>{
+  const name=document.getElementById('playerName').value.trim()||'ANON';
+  await initGame(name, state.difficulty);
+  if(window.innerWidth<=720) addDpad();
+});
+document.getElementById('playerName').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('startBtn').click(); });
+
+document.getElementById('lbBtn').addEventListener('click',()=>{
+  const lb=getLeaderboard('all');
+  renderLeaderboard('lbScreenBody',lb,null);
+  setFbStatus('Lb', fbConnected?'GLOBAL LEADERBOARD':'LOCAL LEADERBOARD', fbConnected?'connected':'dim');
+  showScreen('lb');
+});
+document.getElementById('lbBtnFinish').addEventListener('click',()=>{
+  const lb=getLeaderboard('all');
+  renderLeaderboard('lbScreenBody',lb,null);
+  showScreen('lb');
+});
+document.getElementById('lbBackBtn').addEventListener('click',()=>showScreen('start'));
+
+// Leaderboard filter buttons
+document.getElementById('lbFilters').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-diff]');
+  if(!btn) return;
+  document.querySelectorAll('#lbFilters .cat-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const lb=getLeaderboard(btn.dataset.diff);
+  renderLeaderboard('lbScreenBody',lb,null);
+});
+
+document.getElementById('replayBtn').addEventListener('click',()=>{
+  showScreen('start');
+  clearInterval(state.timerInterval);
+  cancelAnimationFrame(state.animFrame);
+});
+
+document.getElementById('shareBtn').addEventListener('click',()=>{
+  const acc=Math.round(state.correct/20*100);
+  const diff=state.difficulty.toUpperCase();
+  const txt=`🌐 VOI MAZE [${diff}] | ${state.playerName} | Time: ${formatTime(state.timer)} | Accuracy: ${acc}% | Streak: ${state.maxStreak}x | voi.network`;
+  navigator.clipboard.writeText(txt).then(()=>showNotif('RESULT COPIED!'));
+});
+
+window.addEventListener('resize',()=>{ if(state.screen==='game') resizeCanvas(); });
+
+// ── BOOT ─────────────────────────────────────────────────────────
+(async()=>{
+  drawCharPreview();
+  showScreen('start');
+  await loadQuestions();
+  await initFirebase();
+})();
+</script>
+</body>
+</html>
