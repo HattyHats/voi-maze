@@ -1,0 +1,238 @@
+{
+  "version": "1.1",
+  "categories": {
+    "tokenomics": { "label": "Tokenomics", "color": "#00f5ff" },
+    "consensus": { "label": "Consensus", "color": "#7b00ff" },
+    "governance": { "label": "Governance", "color": "#ff006e" },
+    "ecosystem": { "label": "Ecosystem", "color": "#00ff9d" },
+    "technology": { "label": "Technology", "color": "#ffb800" },
+    "community": { "label": "Community", "color": "#ff6b35" }
+  },
+  "questions": [
+    {
+      "id": "q001",
+      "category": "tokenomics",
+      "difficulty": 1,
+      "q": "What percentage of VOI tokens are allocated to the community?",
+      "opts": ["50%", "60%", "75%", "90%"],
+      "a": 2,
+      "fact": "VOI allocates 75% of all tokens to the community — one of the highest community allocations in blockchain history, ensuring true decentralized ownership."
+    },
+    {
+      "id": "q002",
+      "category": "consensus",
+      "difficulty": 1,
+      "q": "What type of consensus mechanism does the Voi blockchain use?",
+      "opts": ["Proof of Work (PoW)", "Proof of Stake (PoS)", "Delegated PoS", "Proof of Authority"],
+      "a": 1,
+      "fact": "Voi uses Proof of Stake, where nodes with more staked tokens have a higher chance of being selected to propose blocks — energy efficient and secure."
+    },
+    {
+      "id": "q003",
+      "category": "consensus",
+      "difficulty": 2,
+      "q": "How are accounts selected to propose blocks in Voi's consensus?",
+      "opts": ["Round-robin rotation", "Highest staker always wins", "Pseudorandom function weighted by stake", "Fixed validator set"],
+      "a": 2,
+      "fact": "Every node runs a pseudorandom function on each staked account. Accounts with more tokens have higher probability of selection — fair yet stake-weighted."
+    },
+    {
+      "id": "q004",
+      "category": "tokenomics",
+      "difficulty": 1,
+      "q": "Voi's economic architecture is planned to span how many years?",
+      "opts": ["5 years", "10 years", "15 years", "20 years"],
+      "a": 3,
+      "fact": "VOI's tokenomics are designed over 20 years to strategically mitigate inflation and protect long-term stakeholders and community members."
+    },
+    {
+      "id": "q005",
+      "category": "technology",
+      "difficulty": 1,
+      "q": "What blockchain technology does Voi leverage for its consensus mechanism?",
+      "opts": ["Ethereum EVM", "Algorand", "Polkadot Substrate", "Cosmos SDK"],
+      "a": 1,
+      "fact": "Voi is built on Algorand's consensus technology, known for its Pure Proof of Stake design with security, scalability, and true decentralization."
+    },
+    {
+      "id": "q006",
+      "category": "technology",
+      "difficulty": 2,
+      "q": "What is Voi's approximate transaction throughput (TPS)?",
+      "opts": ["500 TPS", "1,000 TPS", "5,000 TPS", "Over 10,000 TPS"],
+      "a": 3,
+      "fact": "Voi features over 10,000 TPS with 2.8-second block times, making it highly performant for real-world DeFi, NFT, and gaming applications."
+    },
+    {
+      "id": "q007",
+      "category": "technology",
+      "difficulty": 1,
+      "q": "What is Voi's approximate block time?",
+      "opts": ["0.5 seconds", "2.8 seconds", "10 seconds", "30 seconds"],
+      "a": 1,
+      "fact": "Voi's 2.8-second block time enables near-instant transaction finality — critical for user-facing applications where speed matters."
+    },
+    {
+      "id": "q008",
+      "category": "tokenomics",
+      "difficulty": 2,
+      "q": "How much of Voi's total token supply was raised through private investors to launch?",
+      "opts": ["1.73%", "10%", "25%", "40%"],
+      "a": 0,
+      "fact": "Voi only leveraged 1.73% of total token supply through private investors — a record-low that preserves community ownership and avoids VC dominance."
+    },
+    {
+      "id": "q009",
+      "category": "governance",
+      "difficulty": 1,
+      "q": "What governs Voi's ecosystem direction and investments?",
+      "opts": ["A founding team of VCs", "The Voi Council, elected by token holders", "An appointed board of directors", "Automated smart contract governance"],
+      "a": 1,
+      "fact": "Voi's Council is elected by token holders, ensuring those who contribute to the ecosystem directly shape its direction — democratic blockchain governance."
+    },
+    {
+      "id": "q010",
+      "category": "tokenomics",
+      "difficulty": 2,
+      "q": "Over the first five years, what portion of tokens are dedicated to ecosystem and future growth?",
+      "opts": ["10%", "25%", "50%", "75%"],
+      "a": 2,
+      "fact": "50% of VOI tokens over five years are dedicated to nurturing the ecosystem — funding developer grants, community initiatives, and infrastructure growth."
+    },
+    {
+      "id": "q011",
+      "category": "ecosystem",
+      "difficulty": 2,
+      "q": "Which VC firms back Voi Network?",
+      "opts": ["a16z and Sequoia", "Arrington Capital and Sonic Boom", "Pantera Capital and Multicoin", "Paradigm and Coinbase Ventures"],
+      "a": 1,
+      "fact": "Arrington Capital and Sonic Boom back Voi, believing in its community-first vision — but their stake is kept minimal at just 1.73% of total supply."
+    },
+    {
+      "id": "q012",
+      "category": "ecosystem",
+      "difficulty": 2,
+      "q": "What web3 infrastructure partner did Voi join forces with for digital identity?",
+      "opts": ["Chainlink", "Galxe", "The Graph", "Ceramic Network"],
+      "a": 1,
+      "fact": "Voi partnered with Galxe for modular AI, digital identity management, and seamless Web3 experiences — key infrastructure for broad adoption."
+    },
+    {
+      "id": "q013",
+      "category": "technology",
+      "difficulty": 1,
+      "q": "What does 'Layer 1 blockchain' mean in the context of Voi?",
+      "opts": ["A blockchain built on top of Ethereum", "The base-level blockchain handling its own consensus and security", "A Layer 2 scaling solution", "A sidechain of Bitcoin"],
+      "a": 1,
+      "fact": "A Layer 1 handles its own consensus, security, and settlement natively — Voi is fully sovereign and doesn't rely on any other chain for security."
+    },
+    {
+      "id": "q014",
+      "category": "consensus",
+      "difficulty": 3,
+      "q": "How many steps are required to write a single block to the Voi blockchain in one round?",
+      "opts": ["1 step", "2 steps", "3 steps", "5 steps"],
+      "a": 2,
+      "fact": "Three steps: block proposal, soft vote, and certify vote. Each involves different randomly selected accounts, ensuring decentralized validation."
+    },
+    {
+      "id": "q015",
+      "category": "community",
+      "difficulty": 1,
+      "q": "What is the primary mission of the Voi Network?",
+      "opts": ["To maximize investor returns", "To be a blockchain truly owned, run, and built by its community", "To compete directly with Ethereum on gas fees", "To replace traditional banking systems"],
+      "a": 1,
+      "fact": "Voi's core mission: 'Built by You, Run by You, Owned by You' — placing community ownership at the center of every design decision."
+    },
+    {
+      "id": "q016",
+      "category": "tokenomics",
+      "difficulty": 2,
+      "q": "In Voi's tokenomics, what are 'early incentives' designed to do?",
+      "opts": ["Reward long-term holders after 10 years", "Front-load rewards to kickstart network growth within the first 18 months", "Compensate validators only", "Fund marketing campaigns"],
+      "a": 1,
+      "fact": "Early incentives are fully allocated within the first 18 months to bootstrap network participation, validator nodes, and developer activity."
+    },
+    {
+      "id": "q017",
+      "category": "ecosystem",
+      "difficulty": 2,
+      "q": "Which platform hosted Voi's Incentivized Testnet?",
+      "opts": ["Binance Launchpad", "CoinList", "Polkastarter", "Uniswap"],
+      "a": 1,
+      "fact": "CoinList hosted Voi's Incentivized Testnet, rewarding participants for stress-testing the network and contributing to its early development."
+    },
+    {
+      "id": "q018",
+      "category": "governance",
+      "difficulty": 2,
+      "q": "What does decentralized governance mean for a Voi token holder?",
+      "opts": ["You receive fixed dividends quarterly", "You can vote on network direction, investments, and future changes", "You are guaranteed price appreciation", "You can mine new tokens freely"],
+      "a": 1,
+      "fact": "Voi token holders elect the Council and submit proposals that directly shape the network's evolution — real on-chain power for real participants."
+    },
+    {
+      "id": "q019",
+      "category": "community",
+      "difficulty": 1,
+      "q": "Approximately how many community-driven projects had launched on Voi at its early stage?",
+      "opts": ["5 projects", "15 projects", "Over 25 projects", "Over 100 projects"],
+      "a": 2,
+      "fact": "Voi launched over 25 community-driven projects early on — spanning DeFi, NFTs, gaming, and tooling — all built by the community, for the community."
+    },
+    {
+      "id": "q020",
+      "category": "tokenomics",
+      "difficulty": 2,
+      "q": "What is the key benefit of Voi's conservative fundraising approach for the community?",
+      "opts": ["Higher token price at launch", "Majority of network value stays in community hands, not VCs", "Faster development cycles", "More exchange listings immediately"],
+      "a": 1,
+      "fact": "By limiting private investment to 1.73%, Voi ensures the community retains true governance power — VCs can't outvote or dump tokens on regular holders."
+    },
+    {
+      "id": "q021",
+      "category": "governance",
+      "difficulty": 3,
+      "q": "How can anyone in the Voi ecosystem receive tokens for contributing value?",
+      "opts": ["Only through staking rewards", "By submitting proposals that are approved via community governance", "By purchasing them on exchanges only", "Through a fixed monthly airdrop"],
+      "a": 1,
+      "fact": "Anyone can submit a proposal to the community. If approved, they receive tokens for delivering value — making Voi a truly permissionless contributor economy."
+    },
+    {
+      "id": "q022",
+      "category": "technology",
+      "difficulty": 3,
+      "q": "In Voi's consensus, what does a node propagate alongside a proposed block?",
+      "opts": ["A zero-knowledge proof", "Proof that the pseudorandom function selected that account", "A digital signature from all validators", "A hash of the previous 10 blocks"],
+      "a": 1,
+      "fact": "Nodes propagate the proposed block plus cryptographic proof (the PRF output) that their account was legitimately selected — preventing fraud."
+    },
+    {
+      "id": "q023",
+      "category": "community",
+      "difficulty": 2,
+      "q": "What describes Voi's approach to blockchain development philosophy?",
+      "opts": ["Move fast and break things", "Community-driven innovation with real-world utility focus", "Maximize throughput above all else", "Copy Ethereum's roadmap exactly"],
+      "a": 1,
+      "fact": "Voi prioritizes community-driven innovation — resources flow to contributors who add real value, ensuring organic growth over top-down corporate decisions."
+    },
+    {
+      "id": "q024",
+      "category": "ecosystem",
+      "difficulty": 3,
+      "q": "What does Voi's partnership with Galxe specifically enable for users?",
+      "opts": ["Free transaction fees forever", "Digital credentials and identity management for Web3", "Unlimited NFT minting", "Cross-chain bridges to Solana"],
+      "a": 1,
+      "fact": "Galxe enables robust digital credentials and identity management on Voi — letting users build verifiable on-chain reputations and credentials."
+    },
+    {
+      "id": "q025",
+      "category": "tokenomics",
+      "difficulty": 3,
+      "q": "What mechanism prevents Voi's early investors from immediately selling their tokens?",
+      "opts": ["There are no restrictions", "A structured vesting period for investor token allocations", "Tokens are non-transferable permanently", "Community vote required for each transfer"],
+      "a": 1,
+      "fact": "Private, pre-seed, and seed investors receive tokens through structured vesting periods — aligning their incentives with long-term network success."
+    }
+  ]
+}
