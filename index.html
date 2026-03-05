@@ -661,10 +661,13 @@
 // ── FIREBASE CONFIG ─────────────────────────────────────────────
 // Paste your Firebase config here after following FIREBASE_SETUP.md
 const FIREBASE_CONFIG = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  databaseURL: "PASTE_YOUR_DATABASE_URL",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  // add full config from Firebase console
+  apiKey: "AIzaSyC7_td3yRgthHXcY0eoAMyziGKbkKTNtYg",
+  authDomain: "voi-maze.firebaseapp.com",
+  databaseURL: "https://voi-maze-default-rtdb.firebaseio.com",
+  projectId: "voi-maze",
+  storageBucket: "voi-maze.firebasestorage.app",
+  messagingSenderId: "718313682039",
+  appId: "1:718313682039:web:edd523f376a58169d6c272"
 };
 
 // ── FIREBASE SDK (loaded dynamically) ──────────────────────────
@@ -675,10 +678,6 @@ let allLeaderboardEntries = [];
 async function initFirebase() {
   try {
     // Only attempt if config looks real
-    if (!FIREBASE_CONFIG.databaseURL || FIREBASE_CONFIG.databaseURL.includes('PASTE')) {
-      setFbStatus('all', 'LOCAL MODE (no Firebase config)', 'dim');
-      return;
-    }
     setFbStatus('all', 'CONNECTING...', 'loading');
 
     // Dynamically load Firebase SDK
