@@ -370,6 +370,18 @@
   #lbScreen { gap: 14px; padding: 20px; background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f); }
   .lb-screen-title { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900; color: var(--accent2); text-shadow: var(--glow2); }
 
+  /* Home button */
+  #homeBtn {
+    position: fixed; top: 12px; left: 12px; z-index: 800;
+    background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
+    padding: 6px 12px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    -webkit-tap-highlight-color: transparent;
+    letter-spacing: 0.1em;
+  }
+  #homeBtn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
+
   /* Mute button */
   #muteBtn {
     position: fixed; top: 12px; right: 12px; z-index: 800;
@@ -410,6 +422,9 @@
 </style>
 </head>
 <body>
+
+<!-- HOME BUTTON -->
+<a id="homeBtn" href="https://www.earnwithhatty.com" title="Back to EarnWithHatty.com">⌂ HOME</a>
 
 <!-- MUTE BUTTON -->
 <button id="muteBtn">🔊 SOUND</button>
