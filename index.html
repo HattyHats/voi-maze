@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>VOI MAZE — Blockchain Learning Game</title>
+<title>VOI MAZE - Blockchain Learning Game</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
 
@@ -55,7 +55,7 @@
     pointer-events: none;
   }
 
-  /* ─── SCREENS ─── */
+  /* â”€â”€â”€ SCREENS â”€â”€â”€ */
   .screen {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
@@ -64,7 +64,7 @@
   }
   .screen.hidden { opacity: 0; pointer-events: none; }
 
-  /* ─── START ─── */
+  /* â”€â”€â”€ START â”€â”€â”€ */
   #startScreen { background: radial-gradient(ellipse at 50% 30%, #0a1a2a 0%, #050a0f 70%); gap: 18px; }
 
   .logo-title {
@@ -148,14 +148,14 @@
     margin: 4px 0; opacity: 0.4;
   }
 
-  /* ─── GAME SCREEN ─── */
+  /* â”€â”€â”€ GAME SCREEN â”€â”€â”€ */
   #gameScreen {
     flex-direction: row; align-items: stretch; justify-content: flex-start;
     background: var(--bg); padding: 0;
   }
   #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; }
 
-  /* ─── HUD ─── */
+  /* â”€â”€â”€ HUD â”€â”€â”€ */
   .hud {
     width: 290px; min-width: 220px; background: var(--panel);
     border-left: 1px solid var(--border);
@@ -316,10 +316,10 @@
   .lb-header {
     background: #0a1520; padding: 8px 14px;
     font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 0.3em; color: var(--dim);
-    display: grid; grid-template-columns: 36px 1fr 70px 60px 60px;
+    display: grid; grid-template-columns: 36px 1fr 70px 45px 60px;
   }
   .lb-row {
-    padding: 9px 14px; display: grid; grid-template-columns: 36px 1fr 70px 60px 60px;
+    padding: 9px 14px; display: grid; grid-template-columns: 36px 1fr 70px 45px 60px;
     border-top: 1px solid #ffffff08; font-family: 'Share Tech Mono', monospace; font-size: 12px;
     align-items: center; transition: background 0.2s;
   }
@@ -424,10 +424,10 @@
 <body>
 
 <!-- HOME BUTTON -->
-<a id="homeBtn" href="https://www.earnwithhatty.com" title="Back to EarnWithHatty.com">⌂ HOME</a>
+<a id="homeBtn" href="https://www.earnwithhatty.com" title="Back to EarnWithHatty.com">HOME</a>
 
 <!-- MUTE BUTTON -->
-<button id="muteBtn">🔊 SOUND</button>
+<button id="muteBtn">SOUND ON</button>
 
 <!-- START SCREEN -->
 <div class="screen" id="startScreen">
@@ -455,7 +455,7 @@
     <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusStart">CHECKING CONNECTION...</span>
   </div>
   <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px;text-align:center;line-height:1.8;">
-    ANSWER ALL 20 QUESTIONS TO ESCAPE · COLLECT POWER-UPS IN THE MAZE
+    ANSWER QUESTIONS, FIND THE EXIT, AND CLAIM THE FASTEST RUN
   </div>
 </div>
 
@@ -468,11 +468,11 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="hud-label">OPERATIVE</div>
-        <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--text);font-weight:700;" id="hudName">—</div>
+        <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--text);font-weight:700;" id="hudName">--</div>
       </div>
       <div style="text-align:right;">
         <div class="hud-label">DIFFICULTY</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="hudDiff">—</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="hudDiff">--</div>
       </div>
     </div>
     <div>
@@ -480,7 +480,7 @@
       <div class="hud-value hud-timer" id="hudTimer">00:00</div>
     </div>
     <div>
-      <div class="hud-label">NODE PROGRESS <span id="hudQCount" style="color:var(--accent)">0</span>/20</div>
+        <div class="hud-label">NODE PROGRESS <span id="hudQCount" style="color:var(--accent)">0</span>/<span id="hudQTotal" style="color:var(--dim)">0</span></div>
       <div class="progress-bar-container">
         <div class="progress-bar-fill" id="hudProgress" style="width:0%"></div>
       </div>
@@ -493,20 +493,20 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div>
         <div class="hud-label">ACCURACY</div>
-        <div class="hud-value" id="hudAccuracy" style="font-size:18px;">—</div>
+        <div class="hud-value" id="hudAccuracy" style="font-size:18px;">--</div>
       </div>
       <div>
-        <div class="hud-label">STREAK 🔥</div>
+          <div class="hud-label">STREAK</div>
         <div class="hud-value" id="hudStreak" style="font-size:18px;color:var(--warn);">0</div>
       </div>
     </div>
     <div>
       <div class="hud-label">POWER-UPS <span style="color:var(--dim);font-size:9px;">[1] [2] [3] [4]</span></div>
       <div class="powerups-row" id="powerupsRow">
-        <button class="pu-chip pu-freeze" id="puFreeze" title="TIME FREEZE [1]">❄️ <span class="pu-count" id="puFreezeCount">0</span></button>
-        <button class="pu-chip pu-hint" id="puHint" title="HINT [2]">💡 <span class="pu-count" id="puHintCount">0</span></button>
-        <button class="pu-chip pu-boost" id="puBoost" title="BOOST [3]">⚡ <span class="pu-count" id="puBoostCount">0</span></button>
-        <button class="pu-chip pu-reveal" id="puReveal" title="REVEAL [4]">👁️ <span class="pu-count" id="puRevealCount">0</span></button>
+          <button class="pu-chip pu-freeze" id="puFreeze" title="TIME FREEZE [1]">FRZ <span class="pu-count" id="puFreezeCount">0</span></button>
+          <button class="pu-chip pu-hint" id="puHint" title="HINT [2]">HINT <span class="pu-count" id="puHintCount">0</span></button>
+          <button class="pu-chip pu-boost" id="puBoost" title="BOOST [3]">BOOST <span class="pu-count" id="puBoostCount">0</span></button>
+          <button class="pu-chip pu-reveal" id="puReveal" title="REVEAL [4]">REVEAL <span class="pu-count" id="puRevealCount">0</span></button>
       </div>
     </div>
     <div>
@@ -518,7 +518,7 @@
         <div class="hud-label">ACTIVE CHALLENGE</div>
         <div id="qCatBadge" class="cat-badge" style="display:none;"></div>
       </div>
-      <div class="question-text" id="questionText">Navigate to a glowing node to receive a challenge. Answer ALL 20 to escape!</div>
+        <div class="question-text" id="questionText">Find a node to receive a challenge. Reach the exit to win.</div>
       <div id="answersContainer"></div>
       <div class="feedback-msg" id="feedbackMsg"></div>
       <div class="fact-box" id="factBox"></div>
@@ -541,8 +541,8 @@
 </div>
 
 <!-- POWER-UP PICKUP POPUP -->
-<div class="pu-popup" id="puPopup">
-  <div class="pu-popup-icon" id="puPopupIcon">❄️</div>
+  <div class="pu-popup" id="puPopup">
+    <div class="pu-popup-icon" id="puPopupIcon">FRZ</div>
   <div class="pu-popup-title" id="puPopupTitle">POWER-UP COLLECTED</div>
   <div class="pu-popup-desc" id="puPopupDesc">TIME FREEZE acquired</div>
 </div>
@@ -552,17 +552,17 @@
   <div class="finish-title" id="finishTitle">ESCAPED!</div>
   <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.3em;">VOI BLOCKCHAIN MASTERY CONFIRMED</div>
   <div class="stats-grid">
-    <div class="stat-card"><div class="hud-label">TIME</div><div class="stat-val" id="finishTime">—</div></div>
-    <div class="stat-card"><div class="hud-label">ACCURACY</div><div class="stat-val" id="finishAccuracy">—</div></div>
-    <div class="stat-card"><div class="hud-label">STREAK</div><div class="stat-val" id="finishStreak" style="color:var(--warn);">—</div></div>
-    <div class="stat-card"><div class="hud-label">RANK</div><div class="stat-val" id="finishRank" style="color:var(--warn);">—</div></div>
+    <div class="stat-card"><div class="hud-label">TIME</div><div class="stat-val" id="finishTime">--</div></div>
+      <div class="stat-card"><div class="hud-label">CORRECT</div><div class="stat-val" id="finishAccuracy">--</div></div>
+    <div class="stat-card"><div class="hud-label">STREAK</div><div class="stat-val" id="finishStreak" style="color:var(--warn);">--</div></div>
+    <div class="stat-card"><div class="hud-label">RANK</div><div class="stat-val" id="finishRank" style="color:var(--warn);">--</div></div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="fb-dot" id="fbDotFinish"></div>
     <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusFinish">Saving to leaderboard...</span>
   </div>
   <div class="leaderboard" style="max-height:28vh;overflow-y:auto;">
-    <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">ACC</span><span style="text-align:right">DIFF</span></div>
+      <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
     <div id="lbBody"></div>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
@@ -577,7 +577,7 @@
   <div class="lb-screen-title">LEADERBOARD</div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="fb-dot" id="fbDotLb"></div>
-    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusLb">—</span>
+    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusLb">--</span>
   </div>
   <div class="cat-filters" id="lbFilters">
     <button class="cat-filter-btn active" data-diff="all" style="color:var(--accent);border-color:var(--accent);">ALL</button>
@@ -586,7 +586,7 @@
     <button class="cat-filter-btn" data-diff="hard" style="color:var(--wrong);">HARD</button>
   </div>
   <div class="leaderboard" style="max-height:55vh;overflow-y:auto;">
-    <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">ACC</span><span style="text-align:right">DIFF</span></div>
+      <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
     <div id="lbScreenBody"></div>
   </div>
   <button class="cyber-btn" id="lbBackBtn" style="width:200px;">BACK</button>
@@ -595,24 +595,24 @@
 <!-- D-PAD for mobile -->
 <div id="dpad">
   <div></div>
-  <button class="dpad-btn" id="dUp" style="grid-column:2;grid-row:1;">↑</button>
+    <button class="dpad-btn" id="dUp" style="grid-column:2;grid-row:1;">^</button>
   <div></div>
-  <button class="dpad-btn" id="dLeft" style="grid-column:1;grid-row:2;">←</button>
+    <button class="dpad-btn" id="dLeft" style="grid-column:1;grid-row:2;"><</button>
   <div style="grid-column:2;grid-row:2;"></div>
-  <button class="dpad-btn" id="dRight" style="grid-column:3;grid-row:2;">→</button>
+    <button class="dpad-btn" id="dRight" style="grid-column:3;grid-row:2;">></button>
   <div></div>
-  <button class="dpad-btn" id="dDown" style="grid-column:2;grid-row:3;">↓</button>
+    <button class="dpad-btn" id="dDown" style="grid-column:2;grid-row:3;">v</button>
   <div></div>
 </div>
 
 <div class="notif" id="notif"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-//  VOI MAZE v3.0 — Enhanced Engine
-// ═══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  VOI MAZE v3.0 â€” Enhanced Engine
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// ── FIREBASE CONFIG ─────────────────────────────────────
+// â”€â”€ FIREBASE CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FIREBASE_CONFIG = {
   apiKey: "your-api-key-here",
   authDomain: "voi-maze.firebaseapp.com",
@@ -623,7 +623,7 @@ const FIREBASE_CONFIG = {
   appId: "1:718313682039:web:edd523f376a58169d6c272"
 };
 
-// ── AUDIO ENGINE ─────────────────────────────────────────
+// â”€â”€ AUDIO ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class AudioEngine {
   constructor() {
     this.ctx = null;
@@ -770,12 +770,12 @@ class AudioEngine {
   toggleMute() {
     this.muted = !this.muted;
     if (this.bgGain) this.bgGain.gain.value = this.muted ? 0 : 0.06;
-    document.getElementById('muteBtn').textContent = this.muted ? '🔇 SOUND' : '🔊 SOUND';
+      document.getElementById('muteBtn').textContent = this.muted ? 'SOUND OFF' : 'SOUND ON';
   }
 }
 const audio = new AudioEngine();
 
-// ── FIREBASE ─────────────────────────────────────────────
+// â”€â”€ FIREBASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let db = null, fbConnected = false, allLeaderboardEntries = [];
 
 async function initFirebase() {
@@ -791,11 +791,10 @@ async function initFirebase() {
     window._fbQuery = query; window._fbOrderByChild = orderByChild; window._fbLimitToLast = limitToLast;
     setFbStatus('all', 'GLOBAL LEADERBOARD ACTIVE', 'connected');
     const lbRef = query(ref(db, 'leaderboard'), orderByChild('score'), limitToLast(100));
-    onValue(lbRef, snap => {
-      const data = snap.val() || {};
-      allLeaderboardEntries = Object.values(data);
-      allLeaderboardEntries.sort((a, b) => b.accuracy - a.accuracy || a.time - b.time);
-    });
+      onValue(lbRef, snap => {
+        const data = snap.val() || {};
+        allLeaderboardEntries = sortLeaderboard(Object.values(data));
+      });
   } catch(e) {
     console.warn('Firebase init failed:', e);
     setFbStatus('all', 'LOCAL MODE (Firebase unavailable)', 'error');
@@ -813,32 +812,56 @@ function setFbStatus(target, msg, dotState) {
   });
 }
 
-async function saveToFirebase(entry) {
-  if (!fbConnected || !db) { saveToLocalStorage(entry); return; }
-  try {
-    await window._fbPush(window._fbRef(db, 'leaderboard'), entry);
-    setFbStatus('Finish', 'SAVED TO GLOBAL LEADERBOARD ✓', 'connected');
-  } catch(e) {
-    saveToLocalStorage(entry);
-    setFbStatus('Finish', 'SAVED LOCALLY', 'error');
+  async function saveToFirebase(entry) {
+    if (!fbConnected || !db) { saveToLocalStorage(entry); return; }
+    try {
+      await window._fbPush(window._fbRef(db, 'leaderboard'), entry);
+      setFbStatus('Finish', 'SAVED TO GLOBAL LEADERBOARD', 'connected');
+    } catch(e) {
+      saveToLocalStorage(entry);
+      setFbStatus('Finish', 'SAVED LOCALLY', 'error');
+    }
   }
-}
 
-function saveToLocalStorage(entry) {
-  const lb = getLocalLeaderboard();
-  lb.push(entry); lb.sort((a,b) => b.accuracy - a.accuracy || a.time - b.time);
-  localStorage.setItem('voi_leaderboard_v3', JSON.stringify(lb.slice(0,100)));
-}
-function getLocalLeaderboard() {
-  try { return JSON.parse(localStorage.getItem('voi_leaderboard_v3')) || []; }
-  catch { return []; }
-}
-function getLeaderboard(diffFilter) {
-  const src = fbConnected && allLeaderboardEntries.length ? allLeaderboardEntries : getLocalLeaderboard();
-  return diffFilter && diffFilter !== 'all' ? src.filter(e => e.difficulty === diffFilter) : src;
-}
+  const LEADERBOARD_KEY = 'voi_leaderboard_v4';
 
-// ── QUESTIONS ─────────────────────────────────────────────
+  function normalizeEntry(e) {
+    const totalQuestions = typeof e.totalQuestions === 'number' ? e.totalQuestions : (state.questionCount || MAX_QUESTIONS_PER_GAME);
+    const totalAnswered = typeof e.totalAnswered === 'number' ? e.totalAnswered : totalQuestions;
+    const correct = typeof e.correct === 'number'
+      ? e.correct
+      : Math.round(((e.accuracy || 0) / 100) * totalAnswered);
+    const time = typeof e.time === 'number' ? e.time : 0;
+    const accuracy = totalAnswered > 0 ? Math.round((correct / totalAnswered) * 100) : 0;
+    const score = typeof e.score === 'number' ? e.score : (correct * 1000000 - time);
+    return { ...e, totalQuestions, totalAnswered, correct, accuracy, time, score };
+  }
+
+  function sortLeaderboard(list) {
+    return list.map(normalizeEntry).sort((a, b) => b.correct - a.correct || a.time - b.time);
+  }
+
+  function saveToLocalStorage(entry) {
+    const lb = sortLeaderboard([...getLocalLeaderboard(), entry]);
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(lb.slice(0,100)));
+  }
+  function getLocalLeaderboard() {
+    try {
+      const legacy = localStorage.getItem('voi_leaderboard_v3');
+      if (!localStorage.getItem(LEADERBOARD_KEY) && legacy) {
+        localStorage.setItem(LEADERBOARD_KEY, legacy);
+      }
+      return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || [];
+    }
+    catch { return []; }
+  }
+  function getLeaderboard(diffFilter) {
+    const src = fbConnected && allLeaderboardEntries.length ? allLeaderboardEntries : getLocalLeaderboard();
+    const filtered = diffFilter && diffFilter !== 'all' ? src.filter(e => e.difficulty === diffFilter) : src;
+    return sortLeaderboard(filtered);
+  }
+
+// â”€â”€ QUESTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let QUESTIONS = [], CATEGORIES = {};
 
 async function loadQuestions() {
@@ -860,35 +883,37 @@ const FALLBACK_CATEGORIES = {
   community:  { label:"Community",  color:"#ff6b35" },
 };
 const FALLBACK_QUESTIONS = [
-  { id:"q001", category:"tokenomics", difficulty:1, q:"What percentage of VOI tokens are allocated to the community?", opts:["50%","60%","75%","90%"], a:2, fact:"VOI allocates 75% of all tokens to the community — one of the highest community allocations in blockchain history." },
-  { id:"q002", category:"consensus",  difficulty:1, q:"What type of consensus mechanism does the Voi blockchain use?", opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"], a:1, fact:"Voi uses Proof of Stake — energy efficient and community-run." },
-  { id:"q003", category:"consensus",  difficulty:2, q:"How are block-proposing accounts selected in Voi's consensus?", opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"], a:2, fact:"A pseudorandom function runs on each account — more stake means higher selection probability." },
+  { id:"q001", category:"tokenomics", difficulty:1, q:"What percentage of VOI tokens are allocated to the community?", opts:["50%","60%","75%","90%"], a:2, fact:"VOI allocates 75% of all tokens to the community â€” one of the highest community allocations in blockchain history." },
+  { id:"q002", category:"consensus",  difficulty:1, q:"What type of consensus mechanism does the Voi blockchain use?", opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"], a:1, fact:"Voi uses Proof of Stake â€” energy efficient and community-run." },
+  { id:"q003", category:"consensus",  difficulty:2, q:"How are block-proposing accounts selected in Voi's consensus?", opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"], a:2, fact:"A pseudorandom function runs on each account â€” more stake means higher selection probability." },
   { id:"q004", category:"tokenomics", difficulty:1, q:"Voi's economic architecture spans how many years?", opts:["5","10","15","20"], a:3, fact:"20 years of carefully planned tokenomics to mitigate inflation and protect stakeholders." },
-  { id:"q005", category:"technology", difficulty:1, q:"What blockchain tech does Voi leverage for consensus?", opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"], a:1, fact:"Voi builds on Algorand's Pure PoS consensus — secure, fast, and decentralized." },
+  { id:"q005", category:"technology", difficulty:1, q:"What blockchain tech does Voi leverage for consensus?", opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"], a:1, fact:"Voi builds on Algorand's Pure PoS consensus â€” secure, fast, and decentralized." },
   { id:"q006", category:"technology", difficulty:2, q:"What is Voi's approximate throughput?", opts:["500 TPS","1,000 TPS","5,000 TPS","Over 10,000 TPS"], a:3, fact:"Voi exceeds 10,000 TPS with 2.8-second block finality." },
   { id:"q007", category:"technology", difficulty:1, q:"What is Voi's block time?", opts:["0.5s","2.8s","10s","30s"], a:1, fact:"2.8-second block times enable near-instant transaction finality." },
-  { id:"q008", category:"tokenomics", difficulty:2, q:"How much supply was used for private investor fundraising?", opts:["1.73%","10%","25%","40%"], a:0, fact:"Just 1.73% to private investors — community value is preserved." },
-  { id:"q009", category:"governance", difficulty:1, q:"Who governs Voi's ecosystem direction?", opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"], a:1, fact:"The Voi Council is elected by token holders — true democratic governance." },
+  { id:"q008", category:"tokenomics", difficulty:2, q:"How much supply was used for private investor fundraising?", opts:["1.73%","10%","25%","40%"], a:0, fact:"Just 1.73% to private investors â€” community value is preserved." },
+  { id:"q009", category:"governance", difficulty:1, q:"Who governs Voi's ecosystem direction?", opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"], a:1, fact:"The Voi Council is elected by token holders â€” true democratic governance." },
   { id:"q010", category:"tokenomics", difficulty:2, q:"What portion of tokens over 5 years go to ecosystem growth?", opts:["10%","25%","50%","75%"], a:2, fact:"50% over 5 years funds ecosystem development, grants, and community initiatives." },
   { id:"q011", category:"ecosystem",  difficulty:2, q:"Which VCs back Voi Network?", opts:["a16z & Sequoia","Arrington Capital & Sonic Boom","Pantera & Multicoin","Paradigm & Coinbase"], a:1, fact:"Arrington Capital and Sonic Boom back Voi with minimal equity stake." },
   { id:"q012", category:"ecosystem",  difficulty:2, q:"Which Web3 partner supports Voi's digital identity layer?", opts:["Chainlink","Galxe","The Graph","Ceramic"], a:1, fact:"Galxe enables modular AI, digital credentials, and seamless Web3 identity on Voi." },
-  { id:"q013", category:"technology", difficulty:1, q:"What does 'Layer 1 blockchain' mean for Voi?", opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"], a:1, fact:"L1 means Voi is fully sovereign — its own consensus, security, and settlement." },
-  { id:"q014", category:"consensus",  difficulty:3, q:"How many steps does Voi need to write one block per round?", opts:["1","2","3","5"], a:2, fact:"Three steps: block proposal, soft vote, certify vote — each with different random accounts." },
-  { id:"q015", category:"community",  difficulty:1, q:"What is Voi's core mission?", opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"], a:1, fact:"Built by You, Run by You, Owned by You — the Voi ethos." },
+  { id:"q013", category:"technology", difficulty:1, q:"What does 'Layer 1 blockchain' mean for Voi?", opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"], a:1, fact:"L1 means Voi is fully sovereign â€” its own consensus, security, and settlement." },
+  { id:"q014", category:"consensus",  difficulty:3, q:"How many steps does Voi need to write one block per round?", opts:["1","2","3","5"], a:2, fact:"Three steps: block proposal, soft vote, certify vote â€” each with different random accounts." },
+  { id:"q015", category:"community",  difficulty:1, q:"What is Voi's core mission?", opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"], a:1, fact:"Built by You, Run by You, Owned by You â€” the Voi ethos." },
   { id:"q016", category:"tokenomics", difficulty:2, q:"When are Voi's early incentives fully allocated?", opts:["After 10 years","Within the first 18 months","After 5 years","Gradually over 20 years"], a:1, fact:"Front-loaded within 18 months to kickstart network growth and validator participation." },
   { id:"q017", category:"ecosystem",  difficulty:2, q:"Which platform hosted Voi's Incentivized Testnet?", opts:["Binance Launchpad","CoinList","Polkastarter","Uniswap"], a:1, fact:"CoinList hosted Voi's testnet, rewarding participants for battle-testing the network." },
-  { id:"q018", category:"governance", difficulty:2, q:"What can a Voi token holder do through governance?", opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"], a:1, fact:"Token holders elect the Council and submit proposals — real on-chain democratic power." },
-  { id:"q019", category:"community",  difficulty:1, q:"How many community projects launched on Voi early on?", opts:["5","15","Over 25","Over 100"], a:2, fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling — all community-built." },
+  { id:"q018", category:"governance", difficulty:2, q:"What can a Voi token holder do through governance?", opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"], a:1, fact:"Token holders elect the Council and submit proposals â€” real on-chain democratic power." },
+  { id:"q019", category:"community",  difficulty:1, q:"How many community projects launched on Voi early on?", opts:["5","15","Over 25","Over 100"], a:2, fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling â€” all community-built." },
   { id:"q020", category:"tokenomics", difficulty:2, q:"What's the key benefit of Voi's low private investor allocation?", opts:["Higher launch price","Community retains majority ownership and governance power","Faster dev cycles","More exchange listings"], a:1, fact:"1.73% private allocation means the community can't be outvoted or dumped on by VCs." },
-  { id:"q021", category:"governance", difficulty:3, q:"How does anyone in Voi's ecosystem receive tokens for contributing?", opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"], a:1, fact:"Anyone can submit a proposal — if approved, they receive tokens for delivering value." },
+  { id:"q021", category:"governance", difficulty:3, q:"How does anyone in Voi's ecosystem receive tokens for contributing?", opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"], a:1, fact:"Anyone can submit a proposal â€” if approved, they receive tokens for delivering value." },
   { id:"q022", category:"consensus",  difficulty:3, q:"What does a node broadcast alongside a proposed block in Voi?", opts:["A zero-knowledge proof","Proof the PRF selected that account","Signatures from all validators","Hash of last 10 blocks"], a:1, fact:"Nodes broadcast the block plus cryptographic PRF output proving legitimate selection." },
-  { id:"q023", category:"community",  difficulty:2, q:"How does Voi approach blockchain development philosophy?", opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"], a:1, fact:"Resources flow to contributors who add real value — organic growth over corporate top-down." },
+  { id:"q023", category:"community",  difficulty:2, q:"How does Voi approach blockchain development philosophy?", opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"], a:1, fact:"Resources flow to contributors who add real value â€” organic growth over corporate top-down." },
   { id:"q024", category:"ecosystem",  difficulty:3, q:"What specifically does Galxe enable on Voi for users?", opts:["Free transactions","Digital credentials and Web3 identity management","Unlimited NFT minting","Cross-chain bridges to Solana"], a:1, fact:"Galxe enables verifiable on-chain reputations and credentials for Voi users." },
   { id:"q025", category:"tokenomics", difficulty:3, q:"What prevents Voi's early investors from dumping tokens immediately?", opts:["No restrictions exist","Structured vesting periods","Tokens are permanently non-transferable","Community vote per transfer"], a:1, fact:"Structured vesting aligns investor incentives with long-term network success." },
 ];
 
-// ── MAZE GENERATION ───────────────────────────────────────
-const MAZE_W = 15, MAZE_H = 15, CELL = 40;
+// â”€â”€ MAZE GENERATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const MAZE_W = 23, MAZE_H = 23, CELL = 32;
+  const MAX_QUESTIONS_PER_GAME = 25;
+  const EXIT_COLOR = '#ffb800';
 
 function generateMaze(w, h) {
   const visited = Array.from({length:h}, () => new Array(w).fill(false));
@@ -929,22 +954,29 @@ function bfsOrder(walls) {
   return order;
 }
 
-function placeNodes(walls) {
-  const order = bfsOrder(walls);
-  const nodes = [];
-  const step = Math.floor(order.length / 21);
-  for (let i=1; i<=20; i++) {
-    const cell = order[Math.min(i*step, order.length-1)];
-    nodes.push({x:cell.x, y:cell.y, answered:false, qIdx:i-1, isExit: i===20});
+  function placeExit(walls) {
+    const order = bfsOrder(walls);
+    return order[order.length - 1];
   }
-  return nodes;
-}
 
-function placePowerups(walls, nodes) {
-  const nodeSet = new Set(nodes.map(n=>`${n.x},${n.y}`));
-  nodeSet.add('0,0');
-  const order = bfsOrder(walls);
-  const candidates = order.filter(c => !nodeSet.has(`${c.x},${c.y}`));
+  function placeNodes(walls, count, exitCell) {
+    const exit = exitCell || {x:-1,y:-1};
+    const order = bfsOrder(walls).filter(c => !(c.x === exit.x && c.y === exit.y));
+    const nodes = [];
+    const step = Math.max(1, Math.floor(order.length / (count + 1)));
+    for (let i=1; i<=count; i++) {
+      const cell = order[Math.min(i*step, order.length-1)];
+      nodes.push({x:cell.x, y:cell.y, answered:false, qIdx:i-1});
+    }
+    return nodes;
+  }
+
+  function placePowerups(walls, nodes, exitCell) {
+    const nodeSet = new Set(nodes.map(n=>`${n.x},${n.y}`));
+    nodeSet.add('0,0');
+    if (exitCell) nodeSet.add(`${exitCell.x},${exitCell.y}`);
+    const order = bfsOrder(walls);
+    const candidates = order.filter(c => !nodeSet.has(`${c.x},${c.y}`));
   const shuffled = candidates.sort(() => Math.random()-0.5);
   const types = ['freeze','hint','boost','reveal'];
   const count = { easy:6, normal:4, hard:2 }[state.difficulty] || 4;
@@ -954,7 +986,7 @@ function placePowerups(walls, nodes) {
   }));
 }
 
-// ── PARTICLES ────────────────────────────────────────────
+// â”€â”€ PARTICLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const particles = [];
 function spawnParticles(wx, wy, color, count=6) {
   for (let i=0; i<count; i++) {
@@ -993,10 +1025,11 @@ function drawParticles() {
   }
 }
 
-// ── GAME STATE ────────────────────────────────────────────
+// â”€â”€ GAME STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let state = {
   screen:'start', playerName:'', difficulty:'normal',
-  maze:null, nodes:[], powerups:[],
+    maze:null, nodes:[], powerups:[], exit:null,
+    questionCount:0,
   questions:[],
   player:{x:0,y:0},
   timer:0, timerInterval:null,
@@ -1013,7 +1046,7 @@ let state = {
   lastPlayerPos:{x:-1,y:-1},
 };
 
-// ── CANVAS ───────────────────────────────────────────────
+// â”€â”€ CANVAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const miniMapCanvas = document.getElementById('miniMap');
@@ -1029,9 +1062,9 @@ function resizeCanvas() {
   canvas.style.height = (dh*scale)+'px';
 }
 
-// ── DRAWING ───────────────────────────────────────────────
+// â”€â”€ DRAWING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let time = 0;
-const PU_ICONS  = { freeze:'❄️', hint:'💡', boost:'⚡', reveal:'👁️' };
+  const PU_ICONS  = { freeze:'FRZ', hint:'HINT', boost:'BOOST', reveal:'REVEAL' };
 const PU_COLORS = { freeze:'#00cfff', hint:'#ffe600', boost:'#ff6b35', reveal:'#b400ff' };
 
 // Pre-generate stone texture offsets for cells
@@ -1146,7 +1179,7 @@ function drawMaze() {
       ctx.restore();
     } else {
       const pulse = 0.7+0.3*Math.sin(time*0.06+node.x+node.y);
-      const col = node.isExit ? '#ff006e' : '#7b00ff';
+        const col = '#7b00ff';
       const r = 7*pulse;
 
       // Outer glow ring
@@ -1174,6 +1207,30 @@ function drawMaze() {
         ctx.arc(0, 0, r+4, (a/4)*Math.PI*2, (a/4+0.15)*Math.PI*2);
       }
       ctx.strokeStyle = col+'88'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+    }
+
+    // Exit portal
+    if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
+      const ex = state.exit.x*CELL+CELL/2+1, ey = state.exit.y*CELL+CELL/2+1;
+      const pulse = 0.7 + 0.3*Math.sin(time*0.08);
+      const r = 10 * pulse;
+      const glowGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, r*3);
+      glowGrad.addColorStop(0, EXIT_COLOR+'55');
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(ex-r*3, ey-r*3, r*6, r*6);
+      ctx.save();
+      ctx.shadowColor = EXIT_COLOR; ctx.shadowBlur = 16*pulse;
+      ctx.beginPath(); ctx.arc(ex, ey, r, 0, Math.PI*2);
+      ctx.fillStyle = EXIT_COLOR; ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.rotate(-time * 0.04);
+      ctx.beginPath();
+      ctx.arc(0, 0, r+5, 0, Math.PI*2);
+      ctx.strokeStyle = EXIT_COLOR+'aa'; ctx.lineWidth = 2; ctx.stroke();
       ctx.restore();
     }
   }
@@ -1272,7 +1329,7 @@ function drawPlayer() {
   if (state.boostActive) {
     ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 30;
     ctx.font = '16px serif'; ctx.textAlign = 'center';
-    ctx.fillText('🔥', px, py+14*s+bob);
+    ctx.fillText('*', px, py+14*s+bob);
   }
 
   ctx.restore();
@@ -1310,11 +1367,15 @@ function drawMiniMap() {
     miniCtx.fillStyle = PU_COLORS[pu.type];
     miniCtx.fillRect(pu.x*cw+cw*0.2, pu.y*ch+ch*0.2, cw*0.6, ch*0.6);
   }
-  for (const node of state.nodes) {
-    if (!state.visibleCells.has(`${node.x},${node.y}`) && !fullReveal) continue;
-    miniCtx.fillStyle = node.answered ? '#00ff9d' : (node.isExit ? '#ff006e' : '#7b00ff');
-    miniCtx.fillRect(node.x*cw+cw*0.25, node.y*ch+ch*0.25, cw*0.5, ch*0.5);
-  }
+    for (const node of state.nodes) {
+      if (!state.visibleCells.has(`${node.x},${node.y}`) && !fullReveal) continue;
+      miniCtx.fillStyle = node.answered ? '#00ff9d' : '#7b00ff';
+      miniCtx.fillRect(node.x*cw+cw*0.25, node.y*ch+ch*0.25, cw*0.5, ch*0.5);
+    }
+    if (state.exit && (state.visibleCells.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
+      miniCtx.fillStyle = EXIT_COLOR;
+      miniCtx.fillRect(state.exit.x*cw+cw*0.2, state.exit.y*ch+ch*0.2, cw*0.6, ch*0.6);
+    }
   // Player dot
   miniCtx.shadowColor = '#00f5ff'; miniCtx.shadowBlur = 4;
   miniCtx.fillStyle = '#00f5ff';
@@ -1322,7 +1383,7 @@ function drawMiniMap() {
   miniCtx.shadowBlur = 0;
 }
 
-// ── MOVEMENT ──────────────────────────────────────────────
+// â”€â”€ MOVEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const KEY_MAP = {
   ArrowUp:{dx:0,dy:-1}, ArrowDown:{dx:0,dy:1},
   ArrowLeft:{dx:-1,dy:0}, ArrowRight:{dx:1,dy:0},
@@ -1330,8 +1391,7 @@ const KEY_MAP = {
   W:{dx:0,dy:-1}, S:{dx:0,dy:1}, A:{dx:-1,dy:0}, D:{dx:1,dy:0},
 };
 
-function canMove(x, y, dx, dy) {
-  if (state.boostActive) return true;
+  function canMove(x, y, dx, dy) {
   const w = state.maze;
   if (dx===1)  return !w[y][x].right;
   if (dx===-1) return x>0&&!w[y][x-1].right;
@@ -1346,17 +1406,18 @@ function tryMove(dx, dy) {
   const nx=x+dx, ny=y+dy;
   if (nx<0||nx>=MAZE_W||ny<0||ny>=MAZE_H) return;
   if (!canMove(x,y,dx,dy)) {
-    audio.play('wall');
-    // Wall bump particles
-    const wx = (x + (dx===1?1:0))*CELL+1, wy = (y + (dy===1?1:0))*CELL+1;
-    spawnParticles(wx+CELL*0.5, wy+CELL*0.5, '#00f5ff', 4);
-    return;
-  }
-  if (state.boostActive) {
-    state.boostActive = false;
-    showNotif('⚡ BOOST USED!', false);
-    updatePUDisplay();
-    spawnParticles(nx*CELL+CELL/2+1, ny*CELL+CELL/2+1, '#ff6b35', 10);
+    if (state.boostActive) {
+      state.boostActive = false;
+      showNotif('BOOST USED!', false);
+      updatePUDisplay();
+      spawnParticles(nx*CELL+CELL/2+1, ny*CELL+CELL/2+1, '#ff6b35', 10);
+    } else {
+      audio.play('wall');
+      // Wall bump particles
+      const wx = (x + (dx===1?1:0))*CELL+1, wy = (y + (dy===1?1:0))*CELL+1;
+      spawnParticles(wx+CELL*0.5, wy+CELL*0.5, '#00f5ff', 4);
+      return;
+    }
   }
   state.player.x = nx; state.player.y = ny;
   audio.play('step');
@@ -1367,6 +1428,7 @@ function tryMove(dx, dy) {
   updateVisibility();
   checkPowerupPickup();
   checkNode();
+  checkExit();
 }
 
 function checkPowerupPickup() {
@@ -1381,22 +1443,29 @@ function checkPowerupPickup() {
   spawnParticles(x*CELL+CELL/2+1, y*CELL+CELL/2+1, PU_COLORS[pu.type], 14);
 }
 
-function checkNode() {
-  const {x,y} = state.player;
-  const node = state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
-  if (!node) return;
-  state.activeNode = node;
-  state.questionActive = true;
-  state.activeHintEliminated = [];
-  audio.play('node');
-  showQuestion(node.qIdx);
-  updateNodeChecklist();
-}
+  function checkNode() {
+    const {x,y} = state.player;
+    const node = state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
+    if (!node) return;
+    state.activeNode = node;
+    state.questionActive = true;
+    state.activeHintEliminated = [];
+    audio.play('node');
+    showQuestion(node.qIdx);
+    updateNodeChecklist();
+  }
 
-// ── POWER-UPS ─────────────────────────────────────────────
+  function checkExit() {
+    if (!state.exit || state.questionActive || state.finished) return;
+    if (state.player.x === state.exit.x && state.player.y === state.exit.y) {
+      finishGame();
+    }
+  }
+
+// â”€â”€ POWER-UPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function usePowerup(type) {
   if (state.powerupInventory[type] <= 0) { showNotif(`No ${type.toUpperCase()} charges left!`, true); return; }
-  if (type==='hint' && !state.questionActive) { showNotif('💡 HINT only works at a question node!', true); return; }
+    if (type==='hint' && !state.questionActive) { showNotif('HINT only works at a question node!', true); return; }
 
   state.powerupInventory[type]--;
   updatePUDisplay();
@@ -1405,8 +1474,8 @@ function usePowerup(type) {
   switch(type) {
     case 'freeze':
       state.frozen = true; state.freezeEnd = Date.now()+15000;
-      showNotif('❄️ TIME FROZEN for 15 seconds!');
-      setTimeout(()=>{ state.frozen=false; showNotif('❄️ Time freeze expired'); }, 15000);
+        showNotif('TIME FROZEN for 15 seconds!');
+        setTimeout(()=>{ state.frozen=false; showNotif('Time freeze expired'); }, 15000);
       break;
     case 'hint':
       if (!state.questionActive) break;
@@ -1415,15 +1484,15 @@ function usePowerup(type) {
       const toElim = wrongIdxs.sort(()=>Math.random()-0.5).slice(0,2);
       toElim.forEach(i=>state.activeHintEliminated.push(i));
       applyHintElimination(toElim);
-      showNotif('💡 2 wrong answers eliminated!');
+        showNotif('2 wrong answers eliminated!');
       break;
     case 'boost':
       state.boostActive = true;
-      showNotif('⚡ WALL BOOST active — pass through next wall!');
+        showNotif('WALL BOOST active - pass through next wall!');
       break;
     case 'reveal':
       state.revealed = true; state.revealEnd = Date.now()+5000;
-      showNotif('👁️ FULL MAP revealed for 5 seconds!');
+        showNotif('FULL MAP revealed for 5 seconds!');
       setTimeout(()=>{ state.revealed=false; }, 5000);
       break;
   }
@@ -1459,19 +1528,19 @@ function showPUPopup(type) {
   setTimeout(()=>popup.classList.remove('show'), 2200);
 }
 
-// ── QUESTIONS ─────────────────────────────────────────────
+// â”€â”€ QUESTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DIFF_CONFIG = {
   easy:   { penalty:5,  pool:[1,2] },
   normal: { penalty:10, pool:[1,2,3] },
   hard:   { penalty:20, pool:[2,3] },
 };
 
-function getQuestionsForDifficulty() {
-  const conf = DIFF_CONFIG[state.difficulty];
-  let pool = QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
-  if (pool.length < 20) pool = [...QUESTIONS];
-  return pool.sort(()=>Math.random()-0.5).slice(0,20);
-}
+  function getQuestionsForDifficulty(count) {
+    const conf = DIFF_CONFIG[state.difficulty];
+    let pool = QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
+    if (pool.length < count) pool = [...QUESTIONS];
+    return pool.sort(()=>Math.random()-0.5).slice(0, count);
+  }
 
 function showQuestion(qIdx) {
   const q = state.questions[qIdx];
@@ -1482,7 +1551,8 @@ function showQuestion(qIdx) {
   const fbEl   = isMobile ? document.getElementById('qOverlayFeedback') : document.getElementById('feedbackMsg');
   const factEl = isMobile ? document.getElementById('qOverlayFact') : document.getElementById('factBox');
 
-  textEl.textContent = `[Q${qIdx+1}/20] ${q.q}`;
+    const total = state.questionCount || state.questions.length;
+    textEl.textContent = `[Q${qIdx+1}/${total}] ${q.q}`;
   fbEl.textContent = ''; fbEl.className = 'feedback-msg';
   factEl.textContent = ''; factEl.className = 'fact-box';
 
@@ -1522,7 +1592,7 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
     const penalty = DIFF_CONFIG[state.difficulty].penalty;
     state.timer += penalty;
     audio.play('wrong');
-    showNotif(`✗ INCORRECT — +${penalty}s PENALTY`, true);
+      showNotif(`INCORRECT - +${penalty}s PENALTY`, true);
     spawnParticles(
       state.player.x*CELL+CELL/2+1,
       state.player.y*CELL+CELL/2+1,
@@ -1533,7 +1603,7 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
     state.streak++;
     if (state.streak > state.maxStreak) state.maxStreak = state.streak;
     audio.play('correct');
-    showNotif(state.streak>2 ? `✓ CORRECT — ${state.streak}x STREAK 🔥!` : '✓ CORRECT — NODE UNLOCKED!', false);
+      showNotif(state.streak>2 ? `CORRECT - ${state.streak}x STREAK!` : 'CORRECT - NODE UNLOCKED!', false);
     spawnParticles(
       state.player.x*CELL+CELL/2+1,
       state.player.y*CELL+CELL/2+1,
@@ -1543,9 +1613,9 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
 
   state.totalAnswered++;
   updateHUD();
-  fbEl.textContent = isCorrect ? '✓ CORRECT — PATH UNLOCKED' : '✗ INCORRECT — PENALTY APPLIED';
+    fbEl.textContent = isCorrect ? 'CORRECT - PATH UNLOCKED' : 'INCORRECT - PENALTY APPLIED';
   fbEl.className = 'feedback-msg ' + (isCorrect ? 'correct' : 'wrong');
-  factEl.textContent = '◈ ' + q.fact;
+    factEl.textContent = '* ' + q.fact;
   factEl.className = 'fact-box show';
 
   const delay = isCorrect ? 1800 : 2500;
@@ -1558,47 +1628,47 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
     if (badgeEl) badgeEl.style.display = 'none';
     updateHUD();
     updateNodeChecklist();
-
-    // Check for full completion — ALL 20 nodes answered
-    const allDone = state.nodes.every(n => n.answered);
-    if (allDone) finishGame();
   }, delay);
 }
 
-// ── NODE CHECKLIST ────────────────────────────────────────
-function buildNodeChecklist() {
-  const el = document.getElementById('nodeChecklist');
-  el.innerHTML = '';
-  for (let i=0; i<20; i++) {
-    const div = document.createElement('div');
-    div.className = 'node-check';
-    div.id = `nodeCheck${i}`;
+// â”€â”€ NODE CHECKLIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  function buildNodeChecklist() {
+    const el = document.getElementById('nodeChecklist');
+    el.innerHTML = '';
+    for (let i=0; i<state.questionCount; i++) {
+      const div = document.createElement('div');
+      div.className = 'node-check';
+      div.id = `nodeCheck${i}`;
     div.textContent = i+1;
     el.appendChild(div);
   }
 }
 
-function updateNodeChecklist() {
-  for (let i=0; i<20; i++) {
-    const el = document.getElementById(`nodeCheck${i}`);
-    if (!el) continue;
-    const node = state.nodes[i];
-    if (node.answered) el.className = 'node-check done';
-    else if (state.activeNode && state.activeNode.qIdx === i) el.className = 'node-check active';
-    else el.className = 'node-check';
-  }
+  function updateNodeChecklist() {
+    for (let i=0; i<state.questionCount; i++) {
+      const el = document.getElementById(`nodeCheck${i}`);
+      if (!el) continue;
+      const node = state.nodes[i];
+      if (!node) continue;
+      if (node.answered) el.className = 'node-check done';
+      else if (state.activeNode && state.activeNode.qIdx === i) el.className = 'node-check active';
+      else el.className = 'node-check';
+    }
 }
 
-// ── HUD ───────────────────────────────────────────────────
-function updateHUD() {
-  const answered = state.nodes.filter(n=>n.answered).length;
-  document.getElementById('hudQCount').textContent = answered;
-  document.getElementById('hudProgress').style.width = (answered/20*100)+'%';
-  const acc = state.totalAnswered>0 ? Math.round(state.correct/state.totalAnswered*100)+'%' : '—';
-  document.getElementById('hudAccuracy').textContent = acc;
-  document.getElementById('hudStreak').textContent = state.streak;
-  updatePUDisplay();
-}
+// â”€â”€ HUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  function updateHUD() {
+    const answered = state.nodes.filter(n=>n.answered).length;
+    const total = state.questionCount || state.nodes.length || 1;
+    document.getElementById('hudQCount').textContent = answered;
+    const totalEl = document.getElementById('hudQTotal');
+    if (totalEl) totalEl.textContent = total;
+    document.getElementById('hudProgress').style.width = (answered/total*100)+'%';
+    const acc = state.totalAnswered>0 ? Math.round(state.correct/state.totalAnswered*100)+'%' : '--';
+    document.getElementById('hudAccuracy').textContent = acc;
+    document.getElementById('hudStreak').textContent = state.streak;
+    updatePUDisplay();
+  }
 
 function formatTime(secs) {
   const m = Math.floor(secs/60).toString().padStart(2,'0');
@@ -1618,7 +1688,7 @@ function startTimer() {
   }, 1000);
 }
 
-// ── NOTIFICATION ──────────────────────────────────────────
+// â”€â”€ NOTIFICATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let notifTimeout;
 function showNotif(msg, isWrong=false) {
   const el = document.getElementById('notif');
@@ -1628,7 +1698,7 @@ function showNotif(msg, isWrong=false) {
   notifTimeout = setTimeout(() => el.className='notif', 2200);
 }
 
-// ── GAME LOOP ─────────────────────────────────────────────
+// â”€â”€ GAME LOOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function gameLoop() {
   time++;
   const now = Date.now();
@@ -1642,17 +1712,19 @@ function gameLoop() {
   state.animFrame = requestAnimationFrame(gameLoop);
 }
 
-// ── INIT GAME ─────────────────────────────────────────────
-async function initGame(name, difficulty) {
+// â”€â”€ INIT GAME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  async function initGame(name, difficulty) {
   // Init audio on first user interaction
   audio.init(); audio.resume();
 
-  state.playerName = name;
-  state.difficulty = difficulty;
-  state.maze = generateMaze(MAZE_W, MAZE_H);
-  state.questions = getQuestionsForDifficulty();
-  state.nodes = placeNodes(state.maze);
-  state.powerups = placePowerups(state.maze, state.nodes);
+    state.playerName = name;
+    state.difficulty = difficulty;
+    state.maze = generateMaze(MAZE_W, MAZE_H);
+    state.questionCount = Math.min(MAX_QUESTIONS_PER_GAME, QUESTIONS.length);
+    state.questions = getQuestionsForDifficulty(state.questionCount);
+    state.exit = placeExit(state.maze);
+    state.nodes = placeNodes(state.maze, state.questionCount, state.exit);
+    state.powerups = placePowerups(state.maze, state.nodes, state.exit);
   state.player = {x:0,y:0};
   state.timer=0; state.correct=0; state.wrong=0; state.totalAnswered=0;
   state.streak=0; state.maxStreak=0;
@@ -1685,7 +1757,7 @@ async function initGame(name, difficulty) {
     document.getElementById('dpad').classList.add('show');
   }
 
-  document.getElementById('questionText').textContent = 'Navigate to ALL 20 glowing nodes. Answer every question to escape!';
+    document.getElementById('questionText').textContent = 'Find question nodes, answer them, then reach the exit to win.';
   document.getElementById('answersContainer').innerHTML = '';
   document.getElementById('feedbackMsg').textContent = '';
   document.getElementById('factBox').className = 'fact-box';
@@ -1693,7 +1765,7 @@ async function initGame(name, difficulty) {
   updateHUD();
 }
 
-// ── FINISH ────────────────────────────────────────────────
+// â”€â”€ FINISH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function finishGame() {
   if (state.finished) return;
   state.finished = true;
@@ -1710,23 +1782,35 @@ async function finishGame() {
     );
   }
 
-  const acc = Math.round(state.correct / state.totalAnswered * 100);
-  const score = Math.round(acc*1000 - state.timer*2 + state.maxStreak*50);
-  const entry = {
-    name: state.playerName, time: state.timer, accuracy: acc,
-    streak: state.maxStreak, difficulty: state.difficulty, score, date: Date.now(),
-  };
+    const totalAnswered = state.totalAnswered;
+    const acc = totalAnswered > 0 ? Math.round(state.correct / totalAnswered * 100) : 0;
+    const score = state.correct * 1000000 - state.timer;
+    const entry = {
+      name: state.playerName,
+      time: state.timer,
+      accuracy: acc,
+      correct: state.correct,
+      totalAnswered,
+      totalQuestions: state.questionCount,
+      streak: state.maxStreak,
+      difficulty: state.difficulty,
+      score,
+      date: Date.now(),
+    };
 
   document.getElementById('finishTitle').textContent = acc >= 90 ? 'MASTERY ESCAPED!' : acc >= 70 ? 'ESCAPED!' : 'BARELY ESCAPED!';
   document.getElementById('finishTime').textContent = formatTime(state.timer);
-  document.getElementById('finishAccuracy').textContent = acc+'%';
+    document.getElementById('finishAccuracy').textContent = `${state.correct}/${state.questionCount}`;
   document.getElementById('finishStreak').textContent = state.maxStreak+'x';
   showScreen('finish');
   setFbStatus('Finish', 'SAVING...', 'loading');
 
   await saveToFirebase(entry);
-  const lb = getLeaderboard('all');
-  const rank = lb.findIndex(e=>e.score===score&&e.name===entry.name)+1 || lb.length;
+    const lb = getLeaderboard('all');
+    const rank = lb.findIndex(e => {
+      const n = normalizeEntry(e);
+      return n.name === entry.name && n.correct === entry.correct && n.time === entry.time;
+    }) + 1 || lb.length;
   document.getElementById('finishRank').textContent = '#'+(rank||'?');
   renderLeaderboard('lbBody', lb, entry);
 
@@ -1734,7 +1818,7 @@ async function finishGame() {
   document.getElementById('dpad').classList.remove('show');
 }
 
-// ── LEADERBOARD ───────────────────────────────────────────
+// â”€â”€ LEADERBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderLeaderboard(elId, lb, highlight) {
   const el = document.getElementById(elId);
   if (!lb||!lb.length) {
@@ -1744,13 +1828,14 @@ function renderLeaderboard(elId, lb, highlight) {
   const diffBadge = {easy:'<span style="color:var(--correct);font-size:9px;">E</span>',normal:'<span style="color:var(--accent);font-size:9px;">N</span>',hard:'<span style="color:var(--wrong);font-size:9px;">H</span>'};
   const rankClass = i => i===0?'lb-rank gold':i===1?'lb-rank silver':i===2?'lb-rank bronze':'lb-rank';
   el.innerHTML = lb.slice(0,50).map((e,i) => {
-    const isHL = highlight && e.name===highlight.name && Math.abs(e.time-highlight.time)<2;
+    const entry = normalizeEntry(e);
+    const isHL = highlight && entry.name===highlight.name && Math.abs(entry.time-highlight.time)<2;
     return `<div class="lb-row ${isHL?'highlight-new':''}">
-      <span class="${rankClass(i)}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span>
-      <span class="lb-name">${escapeHtml(e.name||'ANON')}</span>
-      <span class="lb-time">${formatTime(e.time||0)}</span>
-      <span class="lb-score">${e.accuracy||0}%</span>
-      <span class="lb-diff">${diffBadge[e.difficulty]||'—'}</span>
+      <span class="${rankClass(i)}">${i===0?'1':i===1?'2':i===2?'3':i+1}</span>
+      <span class="lb-name">${escapeHtml(entry.name||'ANON')}</span>
+      <span class="lb-time">${formatTime(entry.time||0)}</span>
+      <span class="lb-score">${entry.correct}/${entry.totalQuestions}</span>
+      <span class="lb-diff">${diffBadge[entry.difficulty]||'--'}</span>
     </div>`;
   }).join('');
 }
@@ -1759,7 +1844,7 @@ function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ── SCREENS ───────────────────────────────────────────────
+// â”€â”€ SCREENS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   const el = document.getElementById(name+'Screen');
@@ -1767,7 +1852,7 @@ function showScreen(name) {
   state.screen = name;
 }
 
-// ── CHARACTER PREVIEW ─────────────────────────────────────
+// â”€â”€ CHARACTER PREVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function drawCharPreview() {
   const c = document.getElementById('charPreview');
   const ctx2 = c.getContext('2d');
@@ -1793,7 +1878,7 @@ function drawCharPreview() {
   ctx2.fillRect(px+2*s,py-14*s,2*s,2*s);
 }
 
-// ── TOUCH / SWIPE ─────────────────────────────────────────
+// â”€â”€ TOUCH / SWIPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let touchStart = null;
 canvas.addEventListener('touchstart', e => {
   touchStart = {x:e.touches[0].clientX, y:e.touches[0].clientY};
@@ -1821,7 +1906,7 @@ setupDpadBtn('dDown', 0,1);
 setupDpadBtn('dLeft', -1,0);
 setupDpadBtn('dRight', 1,0);
 
-// ── KEYBOARD ──────────────────────────────────────────────
+// â”€â”€ KEYBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.addEventListener('keydown', e => {
   if (e.key in KEY_MAP) {
     state.keys[e.key] = true;
@@ -1836,7 +1921,7 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => { state.keys[e.key]=false; });
 
-// ── DIFFICULTY BUTTONS ────────────────────────────────────
+// â”€â”€ DIFFICULTY BUTTONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const d = btn.dataset.diff;
@@ -1846,7 +1931,7 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
   });
 });
 
-// ── POWER-UP BUTTON BINDINGS (with touch support) ─────────
+// â”€â”€ POWER-UP BUTTON BINDINGS (with touch support) â”€â”€â”€â”€â”€â”€â”€â”€â”€
 ['freeze','hint','boost','reveal'].forEach(type => {
   const cap = type.charAt(0).toUpperCase()+type.slice(1);
   const btn = document.getElementById('pu'+cap);
@@ -1855,7 +1940,7 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('touchend', e => { e.preventDefault(); usePowerup(type); });
 });
 
-// ── UI BINDINGS ───────────────────────────────────────────
+// â”€â”€ UI BINDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.getElementById('startBtn').addEventListener('click', async () => {
   const name = document.getElementById('playerName').value.trim() || 'ANON';
   await initGame(name, state.difficulty);
@@ -1890,9 +1975,9 @@ document.getElementById('replayBtn').addEventListener('click', () => {
 });
 
 document.getElementById('shareBtn').addEventListener('click', () => {
-  const acc = Math.round(state.correct/state.totalAnswered*100);
+  const acc = state.totalAnswered > 0 ? Math.round(state.correct/state.totalAnswered*100) : 0;
   const diff = state.difficulty.toUpperCase();
-  const txt = `🌐 VOI MAZE [${diff}] | ${state.playerName} | Time: ${formatTime(state.timer)} | Accuracy: ${acc}% | Streak: ${state.maxStreak}x | voi.network`;
+  const txt = `VOI MAZE [${diff}] | ${state.playerName} | Time: ${formatTime(state.timer)} | Correct: ${state.correct}/${state.questionCount} | Accuracy: ${acc}% | Streak: ${state.maxStreak}x | voi.network`;
   navigator.clipboard.writeText(txt).then(()=>showNotif('RESULT COPIED!'));
 });
 
@@ -1900,7 +1985,7 @@ document.getElementById('muteBtn').addEventListener('click', () => audio.toggleM
 
 window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas(); });
 
-// ── BOOT ──────────────────────────────────────────────────
+// â”€â”€ BOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (async () => {
   drawCharPreview();
   showScreen('start');
@@ -1910,3 +1995,10 @@ window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
