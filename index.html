@@ -25,6 +25,7 @@
     --pu-hint: #ffe600;
     --pu-boost: #ff6b35;
     --pu-reveal: #b400ff;
+    --bonus: #ffd700;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,7 +39,6 @@
     position: relative;
   }
 
-  /* CRT scanline overlay */
   body::before {
     content: '';
     position: fixed; inset: 0;
@@ -55,6 +55,14 @@
     pointer-events: none;
   }
 
+  /* Matrix rain canvas — behind everything */
+  #matrixCanvas {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.13;
+  }
+
   .screen {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
@@ -63,7 +71,17 @@
   }
   .screen.hidden { opacity: 0; pointer-events: none; }
 
-  #startScreen { background: radial-gradient(ellipse at 50% 30%, #0a1a2a 0%, #050a0f 70%); gap: 18px; }
+  #startScreen { background: radial-gradient(ellipse at 50% 30%, #0a1a2a 0%, #050a0f 70%); gap: 14px; }
+
+  /* Animated bg maze on start screen */
+  #bgMazeCanvas {
+    position: absolute; inset: 0;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .start-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
   .logo-title {
     font-family: 'Orbitron', monospace;
@@ -90,7 +108,7 @@
 
   .start-form {
     display: flex; flex-direction: column;
-    align-items: center; gap: 12px;
+    align-items: center; gap: 10px;
     width: 340px;
   }
   .cyber-input {
@@ -139,12 +157,43 @@
   .cyber-btn.secondary:hover { box-shadow: var(--glow2); }
   .cyber-btn.danger { border-color: var(--wrong); color: var(--wrong); }
   .cyber-btn.danger::before { background: var(--wrong); }
+  .cyber-btn.gold-btn { border-color: var(--bonus); color: var(--bonus); }
+  .cyber-btn.gold-btn::before { background: var(--bonus); }
+  .cyber-btn.gold-btn:hover { box-shadow: 0 0 12px #ffd70088; }
 
   .divider {
     width: 100%; height: 1px;
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    margin: 4px 0; opacity: 0.4;
+    margin: 2px 0; opacity: 0.4;
   }
+
+  /* Daily challenge banner */
+  .daily-banner {
+    width: 340px; background: #0a0f00;
+    border: 1px solid var(--bonus); padding: 8px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .daily-banner:hover { box-shadow: 0 0 10px #ffd70044; }
+  .daily-icon { font-size: 18px; }
+  .daily-text { flex: 1; }
+  .daily-title { color: var(--bonus); letter-spacing: 0.15em; font-size: 11px; font-weight: 700; }
+  .daily-sub { color: var(--dim); margin-top: 1px; }
+  .daily-done { color: var(--correct); font-size: 9px; }
+
+  /* Mastery badges row */
+  .badges-row {
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+    width: 340px;
+  }
+  .badge-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    padding: 3px 8px; border: 1px solid currentColor;
+    letter-spacing: 0.1em; opacity: 0.4; transition: all 0.2s;
+    cursor: default;
+  }
+  .badge-chip.earned { opacity: 1; text-shadow: 0 0 6px currentColor; }
 
   #gameScreen {
     flex-direction: row; align-items: stretch; justify-content: flex-start;
@@ -183,6 +232,15 @@
     transition: width 0.4s ease; box-shadow: 0 0 8px var(--accent);
   }
 
+  /* Exit lock indicator */
+  .exit-lock-bar {
+    background: #0a0800; border: 1px solid var(--bonus);
+    padding: 5px 8px; font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    color: var(--bonus); letter-spacing: 0.1em; text-align: center;
+    transition: all 0.3s;
+  }
+  .exit-lock-bar.unlocked { border-color: var(--correct); color: var(--correct); background: #001a0d; }
+
   .node-checklist {
     display: grid; grid-template-columns: repeat(5,1fr); gap: 3px;
   }
@@ -195,6 +253,7 @@
   }
   .node-check.done { background: #001a0d; border-color: var(--correct); color: var(--correct); }
   .node-check.active { border-color: var(--accent2); animation: nodeActive 0.5s ease infinite alternate; }
+  .node-check.bonus { border-color: var(--bonus); color: var(--bonus); background: #1a1200; }
   @keyframes nodeActive { from{box-shadow:none} to{box-shadow:0 0 6px var(--accent2)} }
 
   .cat-badge {
@@ -229,6 +288,17 @@
   .question-text {
     font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
     color: var(--text); line-height: 1.5; min-height: 50px;
+  }
+  /* Bonus timer countdown bar */
+  .bonus-timer-bar {
+    height: 3px; background: #1a1200;
+    border: 1px solid var(--bonus); overflow: hidden;
+    display: none;
+  }
+  .bonus-timer-bar.show { display: block; }
+  .bonus-timer-fill {
+    height: 100%; background: var(--bonus);
+    transition: width 0.1s linear; box-shadow: 0 0 6px var(--bonus);
   }
   .answer-btn {
     width: 100%; background: #0a1520; border: 1px solid var(--dim); color: var(--text);
@@ -288,18 +358,83 @@
   .pu-popup-title { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: var(--warn); }
   .pu-popup-desc { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
 
+  /* Lore card gallery overlay */
+  .lore-overlay {
+    position: fixed; inset: 0; background: #050a0ff5;
+    z-index: 700; display: none;
+    align-items: flex-start; justify-content: center;
+    padding: 20px; overflow-y: auto;
+  }
+  .lore-overlay.show { display: flex; }
+  .lore-gallery {
+    width: min(900px, 100%);
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .lore-gallery-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700;
+    color: var(--accent2); text-shadow: var(--glow2);
+  }
+  .lore-cards-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+  .lore-card {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 14px; transition: all 0.2s;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .lore-card.locked {
+    opacity: 0.3; filter: blur(0.5px);
+  }
+  .lore-card:not(.locked):hover { border-color: var(--accent); box-shadow: var(--glow); }
+  .lore-card-cat {
+    font-family: 'Share Tech Mono', monospace; font-size: 8px;
+    letter-spacing: 0.3em; padding: 2px 6px; border: 1px solid currentColor;
+    display: inline-block; text-transform: uppercase; width: fit-content;
+  }
+  .lore-card-q {
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--text); line-height: 1.4;
+  }
+  .lore-card-fact {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--dim); line-height: 1.5; border-left: 2px solid var(--accent2);
+    padding-left: 8px;
+  }
+  .lore-card-locked-msg {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--dim); text-align: center; padding: 8px 0;
+  }
+  .lore-progress {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--dim); text-align: right;
+  }
+
   #finishScreen {
     background: radial-gradient(ellipse at 50% 40%, #0d1a0d 0%, #050a0f 70%);
-    gap: 16px; padding: 20px;
+    gap: 14px; padding: 20px;
   }
   .finish-title {
     font-family: 'Orbitron', monospace;
     font-size: clamp(28px, 6vw, 56px); font-weight: 900;
     color: var(--correct); text-shadow: 0 0 20px var(--correct); text-align: center;
   }
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: min(680px, 90vw); }
-  .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 12px; text-align: center; }
-  .stat-val { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: var(--accent); text-shadow: var(--glow); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: min(680px, 90vw); }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 10px; text-align: center; }
+  .stat-val { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 700; color: var(--accent); text-shadow: var(--glow); }
+
+  /* Newly earned badges on finish */
+  .new-badges {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+    min-height: 0;
+  }
+  .new-badge-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    padding: 4px 12px; border: 1px solid currentColor;
+    animation: badgeGlow 1s ease-in-out infinite alternate;
+  }
+  @keyframes badgeGlow { from { box-shadow: none; } to { box-shadow: 0 0 12px currentColor; } }
 
   .leaderboard { width: min(680px, 90vw); background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
   .lb-header {
@@ -324,7 +459,6 @@
   .lb-score { color: var(--warn); text-align: right; }
   .lb-diff { text-align: right; font-size: 10px; }
 
-  .fb-status { font-family: 'Share Tech Mono', monospace; font-size: 10px; display: flex; align-items: center; gap: 6px; }
   .fb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
   .fb-dot.connected { background: var(--correct); box-shadow: 0 0 6px var(--correct); }
   .fb-dot.error { background: var(--wrong); }
@@ -347,13 +481,14 @@
   }
   .notif.show { opacity: 1; }
   .notif.wrong-notif { border-color: var(--wrong); color: var(--wrong); box-shadow: 0 0 12px #ff386088; }
-  .notif.pu-notif { border-color: var(--warn); color: var(--warn); box-shadow: 0 0 12px #ffb80088; }
+  .notif.bonus-notif { border-color: var(--bonus); color: var(--bonus); box-shadow: 0 0 12px #ffd70088; }
 
   #miniMap { width: 100%; height: 90px; border: 1px solid var(--border); background: #05080f; }
 
   #canvasWrapper {
     flex: 1; overflow: auto; display: flex;
     align-items: center; justify-content: center; background: var(--bg);
+    position: relative;
   }
 
   #lbScreen { gap: 14px; padding: 20px; background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f); }
@@ -404,41 +539,64 @@
     .q-overlay.show { display: flex; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     #dpad.show { display: grid; }
+    .lore-cards-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
 <body>
+
+<!-- Matrix rain canvas (behind everything) -->
+<canvas id="matrixCanvas"></canvas>
 
 <a id="homeBtn" href="https://www.earnwithhatty.com" title="Back to EarnWithHatty.com">HOME</a>
 <button id="muteBtn">SOUND ON</button>
 
 <!-- START SCREEN -->
 <div class="screen" id="startScreen">
-  <div style="text-align:center;margin-bottom:4px;">
-    <div class="logo-title">VOI MAZE</div>
-    <div class="logo-sub">blockchain learning // escape protocol v3.0</div>
-  </div>
-  <canvas id="charPreview" width="80" height="100" style="image-rendering:pixelated;"></canvas>
-  <div class="start-form">
-    <input class="cyber-input" id="playerName" placeholder="ENTER CALLSIGN" maxlength="20" autocomplete="off">
-    <div>
-      <div class="hud-label" style="margin-bottom:6px;">DIFFICULTY</div>
-      <div class="difficulty-row">
-        <button class="diff-btn active-normal" data-diff="normal" id="diffNormal">NORMAL</button>
-        <button class="diff-btn" data-diff="easy" id="diffEasy">EASY</button>
-        <button class="diff-btn" data-diff="hard" id="diffHard">HARD</button>
-      </div>
+  <canvas id="bgMazeCanvas"></canvas>
+  <div class="start-content">
+    <div style="text-align:center;margin-bottom:2px;">
+      <div class="logo-title">VOI MAZE</div>
+      <div class="logo-sub">blockchain learning // escape protocol v4.0</div>
     </div>
-    <div class="divider"></div>
-    <button class="cyber-btn" id="startBtn">INITIALIZE SEQUENCE</button>
-    <button class="cyber-btn secondary" id="lbBtn">VIEW LEADERBOARD</button>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-    <div class="fb-dot" id="fbDotStart"></div>
-    <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusStart">CHECKING CONNECTION...</span>
-  </div>
-  <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-top:4px;text-align:center;line-height:1.8;">
-    ANSWER QUESTIONS, FIND THE EXIT, AND CLAIM THE FASTEST RUN
+    <canvas id="charPreview" width="80" height="100" style="image-rendering:pixelated;"></canvas>
+
+    <!-- Daily Challenge banner -->
+    <div class="daily-banner" id="dailyBanner">
+      <div class="daily-icon">📅</div>
+      <div class="daily-text">
+        <div class="daily-title">DAILY CHALLENGE</div>
+        <div class="daily-sub" id="dailySub">Same maze for all players today</div>
+      </div>
+      <div class="daily-done" id="dailyDoneTag" style="display:none;">✓ DONE</div>
+    </div>
+
+    <!-- Mastery badges -->
+    <div class="badges-row" id="badgesRow"></div>
+
+    <div class="start-form">
+      <input class="cyber-input" id="playerName" placeholder="ENTER CALLSIGN" maxlength="20" autocomplete="off">
+      <div>
+        <div class="hud-label" style="margin-bottom:6px;">DIFFICULTY</div>
+        <div class="difficulty-row">
+          <button class="diff-btn active-normal" data-diff="normal" id="diffNormal">NORMAL</button>
+          <button class="diff-btn" data-diff="easy" id="diffEasy">EASY</button>
+          <button class="diff-btn" data-diff="hard" id="diffHard">HARD</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <button class="cyber-btn" id="startBtn">INITIALIZE SEQUENCE</button>
+      <button class="cyber-btn gold-btn" id="dailyBtn">⚡ DAILY CHALLENGE</button>
+      <button class="cyber-btn secondary" id="lbBtn">VIEW LEADERBOARD</button>
+      <button class="cyber-btn" id="loreBtn" style="border-color:var(--accent2);color:var(--accent2);">📖 LORE GALLERY</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+      <div class="fb-dot" id="fbDotStart"></div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusStart">CHECKING CONNECTION...</span>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);text-align:center;line-height:1.8;">
+      ANSWER QUESTIONS · FIND THE EXIT · CLAIM THE FASTEST RUN
+    </div>
   </div>
 </div>
 
@@ -458,6 +616,10 @@
         <div style="font-family:'Share Tech Mono',monospace;font-size:11px;" id="hudDiff">--</div>
       </div>
     </div>
+    <!-- Daily challenge indicator -->
+    <div id="dailyGameTag" style="display:none;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--bonus);letter-spacing:0.2em;text-align:center;border:1px solid var(--bonus);padding:3px;">
+      ⚡ DAILY CHALLENGE MODE
+    </div>
     <div>
       <div class="hud-label">ELAPSED TIME</div>
       <div class="hud-value hud-timer" id="hudTimer">00:00</div>
@@ -468,6 +630,8 @@
         <div class="progress-bar-fill" id="hudProgress" style="width:0%"></div>
       </div>
     </div>
+    <!-- Exit gate indicator -->
+    <div class="exit-lock-bar" id="exitLockBar">🔒 EXIT LOCKED — ANSWER MORE QUESTIONS</div>
     <div>
       <div class="hud-label">NODES CHECKLIST</div>
       <div class="node-checklist" id="nodeChecklist"></div>
@@ -500,6 +664,7 @@
         <div class="hud-label">ACTIVE CHALLENGE</div>
         <div id="qCatBadge" class="cat-badge" style="display:none;"></div>
       </div>
+      <div class="bonus-timer-bar" id="bonusTimerBar"><div class="bonus-timer-fill" id="bonusTimerFill" style="width:100%"></div></div>
       <div class="question-text" id="questionText">Find a node to receive a challenge. Reach the exit to win.</div>
       <div id="answersContainer"></div>
       <div class="feedback-msg" id="feedbackMsg"></div>
@@ -515,6 +680,7 @@
       <div class="hud-label">CHALLENGE NODE</div>
       <div id="qOverlayCatBadge" class="cat-badge" style="display:none;"></div>
     </div>
+    <div class="bonus-timer-bar" id="bonusTimerBarMobile"><div class="bonus-timer-fill" id="bonusTimerFillMobile" style="width:100%"></div></div>
     <div class="question-text" id="qOverlayText"></div>
     <div id="qOverlayAnswers"></div>
     <div class="feedback-msg" id="qOverlayFeedback"></div>
@@ -522,11 +688,23 @@
   </div>
 </div>
 
-<!-- POWER-UP PICKUP POPUP -->
+<!-- POWER-UP POPUP -->
 <div class="pu-popup" id="puPopup">
   <div class="pu-popup-icon" id="puPopupIcon">FRZ</div>
   <div class="pu-popup-title" id="puPopupTitle">POWER-UP COLLECTED</div>
   <div class="pu-popup-desc" id="puPopupDesc">TIME FREEZE acquired</div>
+</div>
+
+<!-- LORE GALLERY OVERLAY -->
+<div class="lore-overlay" id="loreOverlay">
+  <div class="lore-gallery">
+    <div class="lore-gallery-header">
+      <span>📖 VOI LORE GALLERY</span>
+      <button class="cyber-btn" id="loreCloseBtn" style="width:120px;padding:8px;">CLOSE</button>
+    </div>
+    <div class="lore-progress" id="loreProgress">0 / 0 CARDS UNLOCKED</div>
+    <div class="lore-cards-grid" id="loreCardsGrid"></div>
+  </div>
 </div>
 
 <!-- FINISH SCREEN -->
@@ -539,18 +717,20 @@
     <div class="stat-card"><div class="hud-label">STREAK</div><div class="stat-val" id="finishStreak" style="color:var(--warn);">--</div></div>
     <div class="stat-card"><div class="hud-label">RANK</div><div class="stat-val" id="finishRank" style="color:var(--warn);">--</div></div>
   </div>
+  <!-- Newly earned mastery badges -->
+  <div class="new-badges" id="newBadgesRow"></div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="fb-dot" id="fbDotFinish"></div>
     <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusFinish">Saving to leaderboard...</span>
   </div>
-  <div class="leaderboard" style="max-height:28vh;overflow-y:auto;">
+  <div class="leaderboard" style="max-height:24vh;overflow-y:auto;">
     <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
     <div id="lbBody"></div>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-    <button class="cyber-btn" id="replayBtn" style="width:160px;">REPLAY</button>
-    <button class="cyber-btn secondary" id="lbBtnFinish" style="width:160px;">LEADERBOARD</button>
-    <button class="cyber-btn danger" id="shareBtn" style="width:160px;">COPY RESULT</button>
+    <button class="cyber-btn" id="replayBtn" style="width:140px;">REPLAY</button>
+    <button class="cyber-btn secondary" id="lbBtnFinish" style="width:140px;">LEADERBOARD</button>
+    <button class="cyber-btn danger" id="shareBtn" style="width:140px;">COPY RESULT</button>
   </div>
 </div>
 
@@ -566,6 +746,7 @@
     <button class="cat-filter-btn" data-diff="easy" style="color:var(--correct);">EASY</button>
     <button class="cat-filter-btn" data-diff="normal" style="color:var(--accent);">NORMAL</button>
     <button class="cat-filter-btn" data-diff="hard" style="color:var(--wrong);">HARD</button>
+    <button class="cat-filter-btn" data-diff="daily" style="color:var(--bonus);">DAILY</button>
   </div>
   <div class="leaderboard" style="max-height:55vh;overflow-y:auto;">
     <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
@@ -574,7 +755,7 @@
   <button class="cyber-btn" id="lbBackBtn" style="width:200px;">BACK</button>
 </div>
 
-<!-- D-PAD for mobile -->
+<!-- D-PAD -->
 <div id="dpad">
   <div></div>
   <button class="dpad-btn" id="dUp" style="grid-column:2;grid-row:1;">▲</button>
@@ -591,10 +772,10 @@
 
 <script>
 // ═══════════════════════════════════════════════════════
-//  VOI MAZE v3.1 — Bug-Fixed Engine
+//  VOI MAZE v4.0 — Full Feature Edition
 // ═══════════════════════════════════════════════════════
 
-// ── FIREBASE CONFIG ────────────────────────────────────────────────
+// ── FIREBASE CONFIG ────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey: "your-api-key-here",
   authDomain: "voi-maze.firebaseapp.com",
@@ -605,1176 +786,1033 @@ const FIREBASE_CONFIG = {
   appId: "1:718313682039:web:edd523f376a58169d6c272"
 };
 
-// ── AUDIO ENGINE ────────────────────────────────────────────────────
-class AudioEngine {
-  constructor() {
-    this.ctx = null;
-    this.muted = false;
-    this.bgNode = null;
-    this.bgGain = null;
-    this.initialized = false;
-  }
+// ── MATRIX RAIN ────────────────────────────────────────
+(function initMatrixRain() {
+  const mc = document.getElementById('matrixCanvas');
+  const mx = mc.getContext('2d');
+  const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモ{}[]()<>/\\|=+*&^%$#@!?;:,.~VOI';
+  let cols, drops;
 
+  function resize() {
+    mc.width = window.innerWidth;
+    mc.height = window.innerHeight;
+    cols = Math.floor(mc.width / 16);
+    drops = Array(cols).fill(1);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  setInterval(() => {
+    mx.fillStyle = 'rgba(5,10,15,0.05)';
+    mx.fillRect(0, 0, mc.width, mc.height);
+    for (let i = 0; i < cols; i++) {
+      // Alternate between cyan and green for variety
+      const isAccent = (i % 3 === 0);
+      mx.fillStyle = isAccent ? '#00f5ff' : '#00ff9d';
+      mx.font = '14px Share Tech Mono, monospace';
+      mx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 16, drops[i] * 16);
+      if (drops[i] * 16 > mc.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }, 50);
+})();
+
+// ── AUDIO ENGINE ────────────────────────────────────────
+class AudioEngine {
+  constructor() { this.ctx=null; this.muted=false; this.bgNode=null; this.bgGain=null; this.initialized=false; }
   init() {
     if (this.initialized) return;
-    try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.initialized = true;
-      this.startAmbient();
-    } catch(e) { console.warn('Audio not available'); }
+    try { this.ctx = new (window.AudioContext||window.webkitAudioContext)(); this.initialized=true; this.startAmbient(); }
+    catch(e) { console.warn('Audio not available'); }
   }
-
-  resume() {
-    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-  }
-
+  resume() { if (this.ctx && this.ctx.state==='suspended') this.ctx.resume(); }
   startAmbient() {
     if (!this.ctx || this.muted) return;
-    if (this.bgNode) { try { this.bgNode.stop(); } catch(e){} }
-
-    this.bgGain = this.ctx.createGain();
-    this.bgGain.gain.value = 0.06;
-    this.bgGain.connect(this.ctx.destination);
-
-    const bufSize = this.ctx.sampleRate * 2;
-    const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf; src.loop = true;
-    const filt = this.ctx.createBiquadFilter();
-    filt.type = 'bandpass'; filt.frequency.value = 200; filt.Q.value = 0.3;
-    src.connect(filt); filt.connect(this.bgGain);
-    src.start();
-    this.bgNode = src;
-
-    const osc = this.ctx.createOscillator();
-    const oscGain = this.ctx.createGain();
-    osc.type = 'sine'; osc.frequency.value = 55;
-    oscGain.gain.value = 0.04;
-    osc.connect(oscGain); oscGain.connect(this.ctx.destination);
-    osc.start();
-
-    const lfo = this.ctx.createOscillator();
-    const lfoGain = this.ctx.createGain();
-    lfo.frequency.value = 0.15; lfoGain.gain.value = 8;
-    lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
-    lfo.start();
+    if (this.bgNode) { try{this.bgNode.stop();}catch(e){} }
+    this.bgGain = this.ctx.createGain(); this.bgGain.gain.value=0.06; this.bgGain.connect(this.ctx.destination);
+    const bufSize=this.ctx.sampleRate*2, buf=this.ctx.createBuffer(1,bufSize,this.ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++) data[i]=(Math.random()*2-1)*0.3;
+    const src=this.ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+    const filt=this.ctx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=200; filt.Q.value=0.3;
+    src.connect(filt); filt.connect(this.bgGain); src.start(); this.bgNode=src;
+    const osc=this.ctx.createOscillator(), oscGain=this.ctx.createGain();
+    osc.type='sine'; osc.frequency.value=55; oscGain.gain.value=0.04;
+    osc.connect(oscGain); oscGain.connect(this.ctx.destination); osc.start();
+    const lfo=this.ctx.createOscillator(), lfoGain=this.ctx.createGain();
+    lfo.frequency.value=0.15; lfoGain.gain.value=8;
+    lfo.connect(lfoGain); lfoGain.connect(osc.frequency); lfo.start();
   }
-
   play(type) {
-    if (!this.ctx || this.muted) return;
-    this.resume();
-    const t = this.ctx.currentTime;
-
-    if (type === 'step') {
-      const o = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      o.type = 'square'; o.frequency.value = 200 + Math.random() * 60;
-      g.gain.setValueAtTime(0.04, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-      o.connect(g); g.connect(this.ctx.destination);
-      o.start(t); o.stop(t + 0.08);
-
-    } else if (type === 'wall') {
-      const o = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      o.type = 'sawtooth'; o.frequency.value = 80;
-      g.gain.setValueAtTime(0.12, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-      o.connect(g); g.connect(this.ctx.destination);
-      o.start(t); o.stop(t + 0.15);
-
-    } else if (type === 'correct') {
-      [523, 659, 784].forEach((freq, i) => {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = 'sine'; o.frequency.value = freq;
-        const st = t + i * 0.12;
-        g.gain.setValueAtTime(0.2, st);
-        g.gain.exponentialRampToValueAtTime(0.001, st + 0.3);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(st); o.stop(st + 0.3);
-      });
-
-    } else if (type === 'wrong') {
-      [200, 150].forEach((freq, i) => {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = 'sawtooth'; o.frequency.value = freq;
-        const st = t + i * 0.15;
-        g.gain.setValueAtTime(0.18, st);
-        g.gain.exponentialRampToValueAtTime(0.001, st + 0.25);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(st); o.stop(st + 0.25);
-      });
-
-    } else if (type === 'powerup') {
-      [440, 550, 660, 880].forEach((freq, i) => {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = 'sine'; o.frequency.value = freq;
-        const st = t + i * 0.07;
-        g.gain.setValueAtTime(0.15, st);
-        g.gain.exponentialRampToValueAtTime(0.001, st + 0.2);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(st); o.stop(st + 0.2);
-      });
-
-    } else if (type === 'node') {
-      const o = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(300, t);
-      o.frequency.linearRampToValueAtTime(600, t + 0.2);
-      g.gain.setValueAtTime(0.15, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-      o.connect(g); g.connect(this.ctx.destination);
-      o.start(t); o.stop(t + 0.3);
-
-    } else if (type === 'escape') {
-      [523, 659, 784, 1047, 1319].forEach((freq, i) => {
-        const o = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        o.type = 'sine'; o.frequency.value = freq;
-        const st = t + i * 0.15;
-        g.gain.setValueAtTime(0.25, st);
-        g.gain.exponentialRampToValueAtTime(0.001, st + 0.5);
-        o.connect(g); g.connect(this.ctx.destination);
-        o.start(st); o.stop(st + 0.5);
-      });
+    if (!this.ctx||this.muted) return; this.resume();
+    const t=this.ctx.currentTime;
+    const note=(freq,dur,vol=0.15,wave='sine',delay=0)=>{
+      const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+      o.type=wave; o.frequency.value=freq;
+      g.gain.setValueAtTime(vol,t+delay); g.gain.exponentialRampToValueAtTime(0.001,t+delay+dur);
+      o.connect(g); g.connect(this.ctx.destination); o.start(t+delay); o.stop(t+delay+dur);
+    };
+    if(type==='step'){note(200+Math.random()*60,0.08,0.04,'square');}
+    else if(type==='wall'){note(80,0.15,0.12,'sawtooth');}
+    else if(type==='correct'){[523,659,784].forEach((f,i)=>note(f,0.3,0.2,'sine',i*0.12));}
+    else if(type==='wrong'){[200,150].forEach((f,i)=>note(f,0.25,0.18,'sawtooth',i*0.15));}
+    else if(type==='powerup'){[440,550,660,880].forEach((f,i)=>note(f,0.2,0.15,'sine',i*0.07));}
+    else if(type==='bonus'){[880,1047,1319].forEach((f,i)=>note(f,0.25,0.2,'sine',i*0.08));}
+    else if(type==='node'){
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.linearRampToValueAtTime(600,t+0.2);
+      g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+      o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t+0.3);
     }
+    else if(type==='escape'){[523,659,784,1047,1319].forEach((f,i)=>note(f,0.5,0.25,'sine',i*0.15));}
   }
-
   toggleMute() {
-    this.muted = !this.muted;
-    if (this.bgGain) this.bgGain.gain.value = this.muted ? 0 : 0.06;
-    document.getElementById('muteBtn').textContent = this.muted ? 'SOUND OFF' : 'SOUND ON';
+    this.muted=!this.muted;
+    if(this.bgGain) this.bgGain.gain.value=this.muted?0:0.06;
+    document.getElementById('muteBtn').textContent=this.muted?'SOUND OFF':'SOUND ON';
   }
 }
 const audio = new AudioEngine();
 
-// ── FIREBASE ───────────────────────────────────────────────────────
-let db = null, fbConnected = false, allLeaderboardEntries = [];
-
+// ── FIREBASE ────────────────────────────────────────────
+let db=null, fbConnected=false, allLeaderboardEntries=[];
 async function initFirebase() {
   try {
-    setFbStatus('all', 'CONNECTING...', 'loading');
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getDatabase, ref, push, onValue, query, orderByChild, limitToLast }
-      = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
-    const app = initializeApp(FIREBASE_CONFIG);
-    db = getDatabase(app);
-    fbConnected = true;
-    window._fbRef = ref; window._fbPush = push; window._fbOnValue = onValue;
-    window._fbQuery = query; window._fbOrderByChild = orderByChild; window._fbLimitToLast = limitToLast;
-    setFbStatus('all', 'GLOBAL LEADERBOARD ACTIVE', 'connected');
-    const lbRef = query(ref(db, 'leaderboard'), orderByChild('score'), limitToLast(100));
-    onValue(lbRef, snap => {
-      const data = snap.val() || {};
-      allLeaderboardEntries = sortLeaderboard(Object.values(data));
-    });
-  } catch(e) {
-    console.warn('Firebase init failed:', e);
-    setFbStatus('all', 'LOCAL MODE (Firebase unavailable)', 'error');
-  }
+    setFbStatus('all','CONNECTING...','loading');
+    const {initializeApp}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+    const {getDatabase,ref,push,onValue,query,orderByChild,limitToLast}=await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+    const app=initializeApp(FIREBASE_CONFIG); db=getDatabase(app); fbConnected=true;
+    window._fbRef=ref; window._fbPush=push; window._fbOnValue=onValue;
+    window._fbQuery=query; window._fbOrderByChild=orderByChild; window._fbLimitToLast=limitToLast;
+    setFbStatus('all','GLOBAL LEADERBOARD ACTIVE','connected');
+    const lbRef=query(ref(db,'leaderboard'),orderByChild('score'),limitToLast(200));
+    onValue(lbRef,snap=>{ const data=snap.val()||{}; allLeaderboardEntries=sortLeaderboard(Object.values(data)); });
+  } catch(e) { console.warn('Firebase init failed:',e); setFbStatus('all','LOCAL MODE (Firebase unavailable)','error'); }
 }
-
-function setFbStatus(target, msg, dotState) {
-  ['fbDotStart','fbDotFinish','fbDotLb'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.className = 'fb-dot ' + dotState;
-  });
-  ['fbStatusStart','fbStatusFinish','fbStatusLb'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = msg;
-  });
+function setFbStatus(target,msg,dotState) {
+  ['fbDotStart','fbDotFinish','fbDotLb'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='fb-dot '+dotState;});
+  ['fbStatusStart','fbStatusFinish','fbStatusLb'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=msg;});
 }
-
 async function saveToFirebase(entry) {
-  if (!fbConnected || !db) { saveToLocalStorage(entry); return; }
-  try {
-    await window._fbPush(window._fbRef(db, 'leaderboard'), entry);
-    setFbStatus('Finish', 'SAVED TO GLOBAL LEADERBOARD', 'connected');
-  } catch(e) {
-    saveToLocalStorage(entry);
-    setFbStatus('Finish', 'SAVED LOCALLY', 'error');
-  }
+  if(!fbConnected||!db){saveToLocalStorage(entry);return;}
+  try { await window._fbPush(window._fbRef(db,'leaderboard'),entry); setFbStatus('Finish','SAVED TO GLOBAL LEADERBOARD','connected'); }
+  catch(e) { saveToLocalStorage(entry); setFbStatus('Finish','SAVED LOCALLY','error'); }
 }
-
-const LEADERBOARD_KEY = 'voi_leaderboard_v4';
-
+const LEADERBOARD_KEY='voi_leaderboard_v4';
 function normalizeEntry(e) {
-  const totalQuestions = typeof e.totalQuestions === 'number' ? e.totalQuestions : (state.questionCount || MAX_QUESTIONS_PER_GAME);
-  const totalAnswered = typeof e.totalAnswered === 'number' ? e.totalAnswered : totalQuestions;
-  const correct = typeof e.correct === 'number'
-    ? e.correct
-    : Math.round(((e.accuracy || 0) / 100) * totalAnswered);
-  const time = typeof e.time === 'number' ? e.time : 0;
-  const accuracy = totalAnswered > 0 ? Math.round((correct / totalAnswered) * 100) : 0;
-  const score = typeof e.score === 'number' ? e.score : (correct * 1000000 - time);
-  return { ...e, totalQuestions, totalAnswered, correct, accuracy, time, score };
+  const totalQuestions=typeof e.totalQuestions==='number'?e.totalQuestions:(state.questionCount||MAX_QUESTIONS_PER_GAME);
+  const totalAnswered=typeof e.totalAnswered==='number'?e.totalAnswered:totalQuestions;
+  const correct=typeof e.correct==='number'?e.correct:Math.round(((e.accuracy||0)/100)*totalAnswered);
+  const time=typeof e.time==='number'?e.time:0;
+  const accuracy=totalAnswered>0?Math.round((correct/totalAnswered)*100):0;
+  const score=typeof e.score==='number'?e.score:(correct*1000000-time);
+  return {...e,totalQuestions,totalAnswered,correct,accuracy,time,score};
 }
-
-function sortLeaderboard(list) {
-  return list.map(normalizeEntry).sort((a, b) => b.correct - a.correct || a.time - b.time);
-}
-
+function sortLeaderboard(list) { return list.map(normalizeEntry).sort((a,b)=>b.correct-a.correct||a.time-b.time); }
 function saveToLocalStorage(entry) {
-  const lb = sortLeaderboard([...getLocalLeaderboard(), entry]);
-  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(lb.slice(0,100)));
+  const lb=sortLeaderboard([...getLocalLeaderboard(),entry]);
+  localStorage.setItem(LEADERBOARD_KEY,JSON.stringify(lb.slice(0,100)));
 }
 function getLocalLeaderboard() {
-  try {
-    const legacy = localStorage.getItem('voi_leaderboard_v3');
-    if (!localStorage.getItem(LEADERBOARD_KEY) && legacy) {
-      localStorage.setItem(LEADERBOARD_KEY, legacy);
-    }
-    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || [];
-  }
-  catch { return []; }
+  try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY))||[]; } catch{return[];}
 }
 function getLeaderboard(diffFilter) {
-  const src = fbConnected && allLeaderboardEntries.length ? allLeaderboardEntries : getLocalLeaderboard();
-  const filtered = diffFilter && diffFilter !== 'all' ? src.filter(e => e.difficulty === diffFilter) : src;
+  const src=fbConnected&&allLeaderboardEntries.length?allLeaderboardEntries:getLocalLeaderboard();
+  const filtered=diffFilter&&diffFilter!=='all'?src.filter(e=>e.difficulty===diffFilter||e.isDaily&&diffFilter==='daily'):src;
   return sortLeaderboard(filtered);
 }
 
-// ── QUESTIONS ──────────────────────────────────────────────────────
-let QUESTIONS = [], CATEGORIES = {};
-
+// ── QUESTIONS ───────────────────────────────────────────
+let QUESTIONS=[], CATEGORIES={};
 async function loadQuestions() {
-  try {
-    const res = await fetch('questions.json');
-    const data = await res.json();
-    QUESTIONS = data.questions; CATEGORIES = data.categories;
-  } catch(e) {
-    QUESTIONS = FALLBACK_QUESTIONS; CATEGORIES = FALLBACK_CATEGORIES;
-  }
+  try { const res=await fetch('questions.json'); const data=await res.json(); QUESTIONS=data.questions; CATEGORIES=data.categories; }
+  catch(e) { QUESTIONS=FALLBACK_QUESTIONS; CATEGORIES=FALLBACK_CATEGORIES; }
 }
-
-const FALLBACK_CATEGORIES = {
-  tokenomics: { label:"Tokenomics", color:"#00f5ff" },
-  consensus:  { label:"Consensus",  color:"#7b00ff" },
-  governance: { label:"Governance", color:"#ff006e" },
-  ecosystem:  { label:"Ecosystem",  color:"#00ff9d" },
-  technology: { label:"Technology", color:"#ffb800" },
-  community:  { label:"Community",  color:"#ff6b35" },
+const FALLBACK_CATEGORIES={
+  tokenomics:{label:"Tokenomics",color:"#00f5ff"},consensus:{label:"Consensus",color:"#7b00ff"},
+  governance:{label:"Governance",color:"#ff006e"},ecosystem:{label:"Ecosystem",color:"#00ff9d"},
+  technology:{label:"Technology",color:"#ffb800"},community:{label:"Community",color:"#ff6b35"},
 };
-const FALLBACK_QUESTIONS = [
-  { id:"q001", category:"tokenomics", difficulty:1, q:"What percentage of VOI tokens are allocated to the community?", opts:["50%","60%","75%","90%"], a:2, fact:"VOI allocates 75% of all tokens to the community — one of the highest community allocations in blockchain history." },
-  { id:"q002", category:"consensus",  difficulty:1, q:"What type of consensus mechanism does the Voi blockchain use?", opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"], a:1, fact:"Voi uses Proof of Stake — energy efficient and community-run." },
-  { id:"q003", category:"consensus",  difficulty:2, q:"How are block-proposing accounts selected in Voi's consensus?", opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"], a:2, fact:"A pseudorandom function runs on each account — more stake means higher selection probability." },
-  { id:"q004", category:"tokenomics", difficulty:1, q:"Voi's economic architecture spans how many years?", opts:["5","10","15","20"], a:3, fact:"20 years of carefully planned tokenomics to mitigate inflation and protect stakeholders." },
-  { id:"q005", category:"technology", difficulty:1, q:"What blockchain tech does Voi leverage for consensus?", opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"], a:1, fact:"Voi builds on Algorand's Pure PoS consensus — secure, fast, and decentralized." },
-  { id:"q006", category:"technology", difficulty:2, q:"What is Voi's approximate throughput?", opts:["500 TPS","1,000 TPS","5,000 TPS","Over 10,000 TPS"], a:3, fact:"Voi exceeds 10,000 TPS with 2.8-second block finality." },
-  { id:"q007", category:"technology", difficulty:1, q:"What is Voi's block time?", opts:["0.5s","2.8s","10s","30s"], a:1, fact:"2.8-second block times enable near-instant transaction finality." },
-  { id:"q008", category:"tokenomics", difficulty:2, q:"How much supply was used for private investor fundraising?", opts:["1.73%","10%","25%","40%"], a:0, fact:"Just 1.73% to private investors — community value is preserved." },
-  { id:"q009", category:"governance", difficulty:1, q:"Who governs Voi's ecosystem direction?", opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"], a:1, fact:"The Voi Council is elected by token holders — true democratic governance." },
-  { id:"q010", category:"tokenomics", difficulty:2, q:"What portion of tokens over 5 years go to ecosystem growth?", opts:["10%","25%","50%","75%"], a:2, fact:"50% over 5 years funds ecosystem development, grants, and community initiatives." },
-  { id:"q011", category:"ecosystem",  difficulty:2, q:"Which VCs back Voi Network?", opts:["a16z & Sequoia","Arrington Capital & Sonic Boom","Pantera & Multicoin","Paradigm & Coinbase"], a:1, fact:"Arrington Capital and Sonic Boom back Voi with minimal equity stake." },
-  { id:"q012", category:"ecosystem",  difficulty:2, q:"Which Web3 partner supports Voi's digital identity layer?", opts:["Chainlink","Galxe","The Graph","Ceramic"], a:1, fact:"Galxe enables modular AI, digital credentials, and seamless Web3 identity on Voi." },
-  { id:"q013", category:"technology", difficulty:1, q:"What does 'Layer 1 blockchain' mean for Voi?", opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"], a:1, fact:"L1 means Voi is fully sovereign — its own consensus, security, and settlement." },
-  { id:"q014", category:"consensus",  difficulty:3, q:"How many steps does Voi need to write one block per round?", opts:["1","2","3","5"], a:2, fact:"Three steps: block proposal, soft vote, certify vote — each with different random accounts." },
-  { id:"q015", category:"community",  difficulty:1, q:"What is Voi's core mission?", opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"], a:1, fact:"Built by You, Run by You, Owned by You — the Voi ethos." },
-  { id:"q016", category:"tokenomics", difficulty:2, q:"When are Voi's early incentives fully allocated?", opts:["After 10 years","Within the first 18 months","After 5 years","Gradually over 20 years"], a:1, fact:"Front-loaded within 18 months to kickstart network growth and validator participation." },
-  { id:"q017", category:"ecosystem",  difficulty:2, q:"Which platform hosted Voi's Incentivized Testnet?", opts:["Binance Launchpad","CoinList","Polkastarter","Uniswap"], a:1, fact:"CoinList hosted Voi's testnet, rewarding participants for battle-testing the network." },
-  { id:"q018", category:"governance", difficulty:2, q:"What can a Voi token holder do through governance?", opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"], a:1, fact:"Token holders elect the Council and submit proposals — real on-chain democratic power." },
-  { id:"q019", category:"community",  difficulty:1, q:"How many community projects launched on Voi early on?", opts:["5","15","Over 25","Over 100"], a:2, fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling — all community-built." },
-  { id:"q020", category:"tokenomics", difficulty:2, q:"What's the key benefit of Voi's low private investor allocation?", opts:["Higher launch price","Community retains majority ownership and governance power","Faster dev cycles","More exchange listings"], a:1, fact:"1.73% private allocation means the community can't be outvoted or dumped on by VCs." },
-  { id:"q021", category:"governance", difficulty:3, q:"How does anyone in Voi's ecosystem receive tokens for contributing?", opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"], a:1, fact:"Anyone can submit a proposal — if approved, they receive tokens for delivering value." },
-  { id:"q022", category:"consensus",  difficulty:3, q:"What does a node broadcast alongside a proposed block in Voi?", opts:["A zero-knowledge proof","Proof the PRF selected that account","Signatures from all validators","Hash of last 10 blocks"], a:1, fact:"Nodes broadcast the block plus cryptographic PRF output proving legitimate selection." },
-  { id:"q023", category:"community",  difficulty:2, q:"How does Voi approach blockchain development philosophy?", opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"], a:1, fact:"Resources flow to contributors who add real value — organic growth over corporate top-down." },
-  { id:"q024", category:"ecosystem",  difficulty:3, q:"What specifically does Galxe enable on Voi for users?", opts:["Free transactions","Digital credentials and Web3 identity management","Unlimited NFT minting","Cross-chain bridges to Solana"], a:1, fact:"Galxe enables verifiable on-chain reputations and credentials for Voi users." },
-  { id:"q025", category:"tokenomics", difficulty:3, q:"What prevents Voi's early investors from dumping tokens immediately?", opts:["No restrictions exist","Structured vesting periods","Tokens are permanently non-transferable","Community vote per transfer"], a:1, fact:"Structured vesting aligns investor incentives with long-term network success." },
+const FALLBACK_QUESTIONS=[
+  {id:"q001",category:"tokenomics",difficulty:1,q:"What percentage of VOI tokens are allocated to the community?",opts:["50%","60%","75%","90%"],a:2,fact:"VOI allocates 75% of all tokens to the community — one of the highest community allocations in blockchain history."},
+  {id:"q002",category:"consensus",difficulty:1,q:"What type of consensus mechanism does the Voi blockchain use?",opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"],a:1,fact:"Voi uses Proof of Stake — energy efficient and community-run."},
+  {id:"q003",category:"consensus",difficulty:2,q:"How are block-proposing accounts selected in Voi's consensus?",opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"],a:2,fact:"A pseudorandom function runs on each account — more stake means higher selection probability."},
+  {id:"q004",category:"tokenomics",difficulty:1,q:"Voi's economic architecture spans how many years?",opts:["5","10","15","20"],a:3,fact:"20 years of carefully planned tokenomics to mitigate inflation and protect stakeholders."},
+  {id:"q005",category:"technology",difficulty:1,q:"What blockchain tech does Voi leverage for consensus?",opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"],a:1,fact:"Voi builds on Algorand's Pure PoS consensus — secure, fast, and decentralized."},
+  {id:"q006",category:"technology",difficulty:2,q:"What is Voi's approximate throughput?",opts:["500 TPS","1,000 TPS","5,000 TPS","Over 10,000 TPS"],a:3,fact:"Voi exceeds 10,000 TPS with 2.8-second block finality."},
+  {id:"q007",category:"technology",difficulty:1,q:"What is Voi's block time?",opts:["0.5s","2.8s","10s","30s"],a:1,fact:"2.8-second block times enable near-instant transaction finality."},
+  {id:"q008",category:"tokenomics",difficulty:2,q:"How much supply was used for private investor fundraising?",opts:["1.73%","10%","25%","40%"],a:0,fact:"Just 1.73% to private investors — community value is preserved."},
+  {id:"q009",category:"governance",difficulty:1,q:"Who governs Voi's ecosystem direction?",opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"],a:1,fact:"The Voi Council is elected by token holders — true democratic governance."},
+  {id:"q010",category:"tokenomics",difficulty:2,q:"What portion of tokens over 5 years go to ecosystem growth?",opts:["10%","25%","50%","75%"],a:2,fact:"50% over 5 years funds ecosystem development, grants, and community initiatives."},
+  {id:"q011",category:"ecosystem",difficulty:2,q:"Which VCs back Voi Network?",opts:["a16z & Sequoia","Arrington Capital & Sonic Boom","Pantera & Multicoin","Paradigm & Coinbase"],a:1,fact:"Arrington Capital and Sonic Boom back Voi with minimal equity stake."},
+  {id:"q012",category:"ecosystem",difficulty:2,q:"Which Web3 partner supports Voi's digital identity layer?",opts:["Chainlink","Galxe","The Graph","Ceramic"],a:1,fact:"Galxe enables modular AI, digital credentials, and seamless Web3 identity on Voi."},
+  {id:"q013",category:"technology",difficulty:1,q:"What does 'Layer 1 blockchain' mean for Voi?",opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"],a:1,fact:"L1 means Voi is fully sovereign — its own consensus, security, and settlement."},
+  {id:"q014",category:"consensus",difficulty:3,q:"How many steps does Voi need to write one block per round?",opts:["1","2","3","5"],a:2,fact:"Three steps: block proposal, soft vote, certify vote — each with different random accounts."},
+  {id:"q015",category:"community",difficulty:1,q:"What is Voi's core mission?",opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"],a:1,fact:"Built by You, Run by You, Owned by You — the Voi ethos."},
+  {id:"q016",category:"tokenomics",difficulty:2,q:"When are Voi's early incentives fully allocated?",opts:["After 10 years","Within the first 18 months","After 5 years","Gradually over 20 years"],a:1,fact:"Front-loaded within 18 months to kickstart network growth and validator participation."},
+  {id:"q017",category:"ecosystem",difficulty:2,q:"Which platform hosted Voi's Incentivized Testnet?",opts:["Binance Launchpad","CoinList","Polkastarter","Uniswap"],a:1,fact:"CoinList hosted Voi's testnet, rewarding participants for battle-testing the network."},
+  {id:"q018",category:"governance",difficulty:2,q:"What can a Voi token holder do through governance?",opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"],a:1,fact:"Token holders elect the Council and submit proposals — real on-chain democratic power."},
+  {id:"q019",category:"community",difficulty:1,q:"How many community projects launched on Voi early on?",opts:["5","15","Over 25","Over 100"],a:2,fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling — all community-built."},
+  {id:"q020",category:"tokenomics",difficulty:2,q:"What's the key benefit of Voi's low private investor allocation?",opts:["Higher launch price","Community retains majority ownership and governance power","Faster dev cycles","More exchange listings"],a:1,fact:"1.73% private allocation means the community can't be outvoted or dumped on by VCs."},
+  {id:"q021",category:"governance",difficulty:3,q:"How does anyone in Voi's ecosystem receive tokens for contributing?",opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"],a:1,fact:"Anyone can submit a proposal — if approved, they receive tokens for delivering value."},
+  {id:"q022",category:"consensus",difficulty:3,q:"What does a node broadcast alongside a proposed block in Voi?",opts:["A zero-knowledge proof","Proof the PRF selected that account","Signatures from all validators","Hash of last 10 blocks"],a:1,fact:"Nodes broadcast the block plus cryptographic PRF output proving legitimate selection."},
+  {id:"q023",category:"community",difficulty:2,q:"How does Voi approach blockchain development philosophy?",opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"],a:1,fact:"Resources flow to contributors who add real value — organic growth over corporate top-down."},
+  {id:"q024",category:"ecosystem",difficulty:3,q:"What specifically does Galxe enable on Voi for users?",opts:["Free transactions","Digital credentials and Web3 identity management","Unlimited NFT minting","Cross-chain bridges to Solana"],a:1,fact:"Galxe enables verifiable on-chain reputations and credentials for Voi users."},
+  {id:"q025",category:"tokenomics",difficulty:3,q:"What prevents Voi's early investors from dumping tokens immediately?",opts:["No restrictions exist","Structured vesting periods","Tokens are permanently non-transferable","Community vote per transfer"],a:1,fact:"Structured vesting aligns investor incentives with long-term network success."},
 ];
 
-// ── MAZE GENERATION ────────────────────────────────────────────────
-const MAZE_W = 23, MAZE_H = 23, CELL = 32;
-const MAX_QUESTIONS_PER_GAME = 25;
-const EXIT_COLOR = '#ffb800';
+// ── DAILY CHALLENGE ─────────────────────────────────────
+function getDailyKey() {
+  const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+function getDailySeed() {
+  const key=getDailyKey(); let h=0;
+  for(let i=0;i<key.length;i++){h=Math.imul(31,h)+key.charCodeAt(i)|0;}
+  return Math.abs(h);
+}
+// Seeded PRNG (mulberry32)
+function seededRng(seed) {
+  let s=seed;
+  return ()=>{ s|=0; s=s+0x6D2B79F5|0; let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296; };
+}
+function getDailyQuestions(count) {
+  const rng=seededRng(getDailySeed());
+  const shuffled=[...QUESTIONS].sort(()=>rng()-0.5);
+  return shuffled.slice(0,Math.min(count,shuffled.length));
+}
+function getDailyMazeSeed() { return getDailySeed(); }
 
-// Iterative DFS to avoid stack overflow on large mazes
-function generateMaze(w, h) {
-  const visited = Array.from({length:h}, () => new Array(w).fill(false));
-  const walls = Array.from({length:h}, () => Array.from({length:w}, () => ({right:true,bottom:true})));
-  const stack = [{x:0,y:0}];
-  visited[0][0] = true;
-  while (stack.length) {
-    const cur = stack[stack.length - 1];
-    const {x, y} = cur;
-    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]
-      .filter(({dx,dy}) => {
-        const nx=x+dx, ny=y+dy;
-        return nx>=0&&nx<w&&ny>=0&&ny<h&&!visited[ny][nx];
-      })
-      .sort(() => Math.random()-0.5);
-    if (dirs.length === 0) { stack.pop(); continue; }
-    const {dx,dy} = dirs[0];
-    const nx=x+dx, ny=y+dy;
-    if (dx===1) walls[y][x].right=false;
-    if (dx===-1) walls[y][nx].right=false;
-    if (dy===1) walls[y][x].bottom=false;
-    if (dy===-1) walls[ny][x].bottom=false;
-    visited[ny][nx]=true;
-    stack.push({x:nx,y:ny});
+// Seeded maze generation using a PRNG
+function generateMazeSeeded(w, h, seed) {
+  const rng = seededRng(seed);
+  const visited=Array.from({length:h},()=>new Array(w).fill(false));
+  const walls=Array.from({length:h},()=>Array.from({length:w},()=>({right:true,bottom:true})));
+  const stack=[{x:0,y:0}]; visited[0][0]=true;
+  while(stack.length){
+    const cur=stack[stack.length-1]; const{x,y}=cur;
+    const dirs=[{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]
+      .filter(({dx,dy})=>{const nx=x+dx,ny=y+dy;return nx>=0&&nx<w&&ny>=0&&ny<h&&!visited[ny][nx];})
+      .sort(()=>rng()-0.5);
+    if(!dirs.length){stack.pop();continue;}
+    const{dx,dy}=dirs[0]; const nx=x+dx,ny=y+dy;
+    if(dx===1)walls[y][x].right=false; if(dx===-1)walls[y][nx].right=false;
+    if(dy===1)walls[y][x].bottom=false; if(dy===-1)walls[ny][x].bottom=false;
+    visited[ny][nx]=true; stack.push({x:nx,y:ny});
   }
   return walls;
 }
+function hasDoneDaily() { return localStorage.getItem('voi_daily_'+getDailyKey())==='done'; }
+function markDailyDone() { localStorage.setItem('voi_daily_'+getDailyKey(),'done'); }
 
-function bfsOrder(walls) {
-  const visited = Array.from({length:MAZE_H}, () => new Array(MAZE_W).fill(false));
-  const queue = [{x:0,y:0}]; visited[0][0] = true;
-  const order = [];
-  while(queue.length) {
-    const {x,y} = queue.shift(); order.push({x,y});
-    const w = walls[y][x];
+// ── MASTERY BADGES ──────────────────────────────────────
+const BADGE_DEFS = [
+  {id:'tokenomics', label:'TOKEN MASTER', color:'#00f5ff'},
+  {id:'consensus',  label:'CONSENSUS PRO', color:'#7b00ff'},
+  {id:'governance', label:'GOV EXPERT', color:'#ff006e'},
+  {id:'ecosystem',  label:'ECO BUILDER', color:'#00ff9d'},
+  {id:'technology', label:'TECH WIZARD', color:'#ffb800'},
+  {id:'community',  label:'COMMUNITY OG', color:'#ff6b35'},
+];
+const BADGE_KEY='voi_badges_v1';
+const CAT_CORRECT_KEY='voi_cat_correct_v1';
+// Need 3 correct per category to earn badge
+const BADGE_THRESHOLD = 3;
+
+function getBadgeData() {
+  try { return JSON.parse(localStorage.getItem(BADGE_KEY))||{}; } catch{return{};}
+}
+function getCatCorrect() {
+  try { return JSON.parse(localStorage.getItem(CAT_CORRECT_KEY))||{}; } catch{return{};}
+}
+function recordCatCorrects(questionsAnsweredCorrectly) {
+  const cc=getCatCorrect();
+  questionsAnsweredCorrectly.forEach(q=>{
+    cc[q.category]=(cc[q.category]||0)+1;
+  });
+  localStorage.setItem(CAT_CORRECT_KEY,JSON.stringify(cc));
+  return cc;
+}
+function checkNewBadges(catCorrects) {
+  const bd=getBadgeData(); const newOnes=[];
+  BADGE_DEFS.forEach(b=>{
+    if(!bd[b.id]&&(catCorrects[b.id]||0)>=BADGE_THRESHOLD){
+      bd[b.id]=true; newOnes.push(b);
+    }
+  });
+  localStorage.setItem(BADGE_KEY,JSON.stringify(bd));
+  return newOnes;
+}
+function renderBadgesRow() {
+  const bd=getBadgeData();
+  const row=document.getElementById('badgesRow');
+  row.innerHTML=BADGE_DEFS.map(b=>`
+    <div class="badge-chip ${bd[b.id]?'earned':''}" style="color:${b.color};" title="${b.label}">
+      ${b.label}
+    </div>`).join('');
+}
+
+// ── LORE GALLERY ─────────────────────────────────────────
+const LORE_KEY='voi_lore_unlocked_v1';
+function getUnlockedLore() {
+  try { return JSON.parse(localStorage.getItem(LORE_KEY))||[]; } catch{return[];}
+}
+function unlockLoreCard(qId) {
+  const ul=getUnlockedLore();
+  if(!ul.includes(qId)){ ul.push(qId); localStorage.setItem(LORE_KEY,JSON.stringify(ul)); }
+}
+function renderLoreGallery() {
+  const ul=getUnlockedLore();
+  const grid=document.getElementById('loreCardsGrid');
+  const prog=document.getElementById('loreProgress');
+  prog.textContent=`${ul.length} / ${QUESTIONS.length} CARDS UNLOCKED`;
+  grid.innerHTML=QUESTIONS.map(q=>{
+    const cat=CATEGORIES[q.category]||{label:q.category,color:'#00f5ff'};
+    const isUnlocked=ul.includes(q.id);
+    return `<div class="lore-card ${isUnlocked?'':'locked'}">
+      <div class="lore-card-cat" style="color:${cat.color}">${cat.label}</div>
+      ${isUnlocked
+        ?`<div class="lore-card-q">${q.q}</div>
+           <div class="lore-card-fact">★ ${q.fact}</div>`
+        :`<div class="lore-card-locked-msg">🔒 ANSWER THIS QUESTION TO UNLOCK</div>`
+      }
+    </div>`;
+  }).join('');
+}
+
+// ── BG MAZE ANIMATION (start screen) ───────────────────
+let bgMazeAnim = null;
+function startBgMaze() {
+  const bc=document.getElementById('bgMazeCanvas');
+  bc.width=bc.parentElement.offsetWidth||window.innerWidth;
+  bc.height=bc.parentElement.offsetHeight||window.innerHeight;
+  const bx=bc.getContext('2d');
+  // Generate a small quick maze for the bg
+  const BW=15,BH=12,BC=Math.min(bc.width/BW,bc.height/BH);
+  const bmaze=generateMazeSeeded(BW,BH,42);
+  // Animate a "ghost" solving it via BFS
+  const bvisited=Array.from({length:BH},()=>new Array(BW).fill(false));
+  const bqueue=[{x:0,y:0,path:[{x:0,y:0}]}]; bvisited[0][0]=true;
+  let bpath=[], bpathIdx=0, bframe=0;
+  // Run full BFS to find path to farthest cell
+  const bAllCells=[];
+  const q2=[{x:0,y:0}]; const bv2=Array.from({length:BH},()=>new Array(BW).fill(false)); bv2[0][0]=true;
+  while(q2.length){
+    const{x,y}=q2.shift(); bAllCells.push({x,y});
+    const w=bmaze[y][x];
+    [{nx:x+1,ny:y,ok:!w.right},{nx:x-1,ny:y,ok:x>0&&!bmaze[y][x-1].right},
+     {nx:x,ny:y+1,ok:!w.bottom},{nx:x,ny:y-1,ok:y>0&&!bmaze[y-1][x].bottom}]
+    .forEach(({nx,ny,ok})=>{if(ok&&nx>=0&&nx<BW&&ny>=0&&ny<BH&&!bv2[ny][nx]){bv2[ny][nx]=true;q2.push({x:nx,y:ny});}});
+  }
+  // BFS with path tracking to farthest
+  const bpar=Array.from({length:BH},()=>new Array(BW).fill(null));
+  const bq3=[{x:0,y:0}]; const bv3=Array.from({length:BH},()=>new Array(BW).fill(false)); bv3[0][0]=true;
+  while(bq3.length){
+    const{x,y}=bq3.shift();
+    const w=bmaze[y][x];
+    [{nx:x+1,ny:y,ok:!w.right},{nx:x-1,ny:y,ok:x>0&&!bmaze[y][x-1].right},
+     {nx:x,ny:y+1,ok:!w.bottom},{nx:x,ny:y-1,ok:y>0&&!bmaze[y-1][x].bottom}]
+    .forEach(({nx,ny,ok})=>{if(ok&&nx>=0&&nx<BW&&ny>=0&&ny<BH&&!bv3[ny][nx]){bv3[ny][nx]=true;bpar[ny][nx]={x,y};bq3.push({x:nx,y:ny});}});
+  }
+  // Trace path back from farthest
+  let{x:ex,y:ey}=bAllCells[bAllCells.length-1];
+  const traced=[]; while(bpar[ey][ex]){traced.unshift({x:ex,y:ey});const p=bpar[ey][ex];ex=p.x;ey=p.y;}
+  traced.unshift({x:0,y:0}); bpath=traced;
+
+  const revealedBG=new Set();
+  function drawBgMaze(){
+    bx.clearRect(0,0,bc.width,bc.height);
+    const ox=(bc.width-BW*BC)/2, oy=(bc.height-BH*BC)/2;
+    // Draw revealed cells
+    revealedBG.forEach(key=>{
+      const[cx,cy]=key.split(',').map(Number);
+      bx.fillStyle='#0d1f30'; bx.fillRect(ox+cx*BC,oy+cy*BC,BC,BC);
+    });
+    // Draw walls
+    bx.strokeStyle='#00f5ff'; bx.lineWidth=1;
+    for(let y=0;y<BH;y++){for(let x=0;x<BW;x++){
+      const key=`${x},${y}`; if(!revealedBG.has(key))continue;
+      const cx2=ox+x*BC,cy2=oy+y*BC; const w=bmaze[y][x];
+      if(y===0){bx.beginPath();bx.moveTo(cx2,cy2);bx.lineTo(cx2+BC,cy2);bx.stroke();}
+      if(x===0){bx.beginPath();bx.moveTo(cx2,cy2);bx.lineTo(cx2,cy2+BC);bx.stroke();}
+      if(w.right){bx.beginPath();bx.moveTo(cx2+BC,cy2);bx.lineTo(cx2+BC,cy2+BC);bx.stroke();}
+      if(w.bottom){bx.beginPath();bx.moveTo(cx2,cy2+BC);bx.lineTo(cx2+BC,cy2+BC);bx.stroke();}
+    }}
+    // Draw ghost player dot
+    if(bpathIdx<bpath.length){
+      const{x,y}=bpath[bpathIdx];
+      bx.fillStyle='#00f5ff'; bx.shadowColor='#00f5ff'; bx.shadowBlur=8;
+      bx.beginPath(); bx.arc(ox+x*BC+BC/2,oy+y*BC+BC/2,3,0,Math.PI*2); bx.fill();
+      bx.shadowBlur=0;
+    }
+  }
+  if(bgMazeAnim) clearInterval(bgMazeAnim);
+  bgMazeAnim=setInterval(()=>{
+    if(bpathIdx<bpath.length){ revealedBG.add(`${bpath[bpathIdx].x},${bpath[bpathIdx].y}`); bpathIdx++; }
+    else { bpathIdx=0; revealedBG.clear(); } // loop
+    drawBgMaze();
+  },80);
+}
+function stopBgMaze() { if(bgMazeAnim){clearInterval(bgMazeAnim);bgMazeAnim=null;} }
+
+// ── MAZE GENERATION ─────────────────────────────────────
+const MAZE_W=23,MAZE_H=23,CELL=32;
+const MAX_QUESTIONS_PER_GAME=25;
+const EXIT_COLOR='#ffb800';
+// Min % of questions to answer before exit unlocks
+const EXIT_GATE={ easy:0.5, normal:0.6, hard:0.8 };
+
+function generateMaze(w,h){
+  const visited=Array.from({length:h},()=>new Array(w).fill(false));
+  const walls=Array.from({length:h},()=>Array.from({length:w},()=>({right:true,bottom:true})));
+  const stack=[{x:0,y:0}]; visited[0][0]=true;
+  while(stack.length){
+    const{x,y}=stack[stack.length-1];
+    const dirs=[{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]
+      .filter(({dx,dy})=>{const nx=x+dx,ny=y+dy;return nx>=0&&nx<w&&ny>=0&&ny<h&&!visited[ny][nx];})
+      .sort(()=>Math.random()-0.5);
+    if(!dirs.length){stack.pop();continue;}
+    const{dx,dy}=dirs[0]; const nx=x+dx,ny=y+dy;
+    if(dx===1)walls[y][x].right=false; if(dx===-1)walls[y][nx].right=false;
+    if(dy===1)walls[y][x].bottom=false; if(dy===-1)walls[ny][x].bottom=false;
+    visited[ny][nx]=true; stack.push({x:nx,y:ny});
+  }
+  return walls;
+}
+function bfsOrder(walls){
+  const visited=Array.from({length:MAZE_H},()=>new Array(MAZE_W).fill(false));
+  const queue=[{x:0,y:0}]; visited[0][0]=true; const order=[];
+  while(queue.length){
+    const{x,y}=queue.shift(); order.push({x,y}); const w=walls[y][x];
     [{nx:x+1,ny:y,ok:!w.right},{nx:x-1,ny:y,ok:x>0&&!walls[y][x-1].right},
      {nx:x,ny:y+1,ok:!w.bottom},{nx:x,ny:y-1,ok:y>0&&!walls[y-1][x].bottom}]
-    .forEach(({nx,ny,ok}) => {
-      if (ok&&nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&!visited[ny][nx]) {
-        visited[ny][nx]=true; queue.push({x:nx,y:ny});
-      }
-    });
+    .forEach(({nx,ny,ok})=>{if(ok&&nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&!visited[ny][nx]){visited[ny][nx]=true;queue.push({x:nx,y:ny});}});
   }
   return order;
 }
-
-function placeExit(walls) {
-  const order = bfsOrder(walls);
-  return order[order.length - 1];
-}
-
-function placeNodes(walls, count, exitCell) {
-  const exit = exitCell || {x:-1,y:-1};
-  const order = bfsOrder(walls).filter(c => !(c.x===exit.x && c.y===exit.y) && !(c.x===0 && c.y===0));
-  const nodes = [];
-  const usedCells = new Set();
-  const step = Math.max(1, Math.floor(order.length / (count + 1)));
-  for (let i = 1; i <= count; i++) {
-    // FIX: skip cells already used by another node to prevent overlaps
-    let idx = Math.min(i * step, order.length - 1);
-    while (usedCells.has(`${order[idx].x},${order[idx].y}`) && idx < order.length - 1) idx++;
-    const cell = order[idx];
-    usedCells.add(`${cell.x},${cell.y}`);
-    nodes.push({x:cell.x, y:cell.y, answered:false, qIdx:i-1});
+function placeExit(walls){ const o=bfsOrder(walls); return o[o.length-1]; }
+function placeNodes(walls,count,exitCell){
+  const exit=exitCell||{x:-1,y:-1};
+  const order=bfsOrder(walls).filter(c=>!(c.x===exit.x&&c.y===exit.y)&&!(c.x===0&&c.y===0));
+  const nodes=[]; const usedCells=new Set();
+  const step=Math.max(1,Math.floor(order.length/(count+1)));
+  for(let i=1;i<=count;i++){
+    let idx=Math.min(i*step,order.length-1);
+    while(usedCells.has(`${order[idx].x},${order[idx].y}`)&&idx<order.length-1)idx++;
+    const cell=order[idx]; usedCells.add(`${cell.x},${cell.y}`);
+    nodes.push({x:cell.x,y:cell.y,answered:false,qIdx:i-1,isBonus:false});
   }
   return nodes;
 }
-
-function placePowerups(walls, nodes, exitCell) {
-  const nodeSet = new Set(nodes.map(n=>`${n.x},${n.y}`));
-  nodeSet.add('0,0');
-  if (exitCell) nodeSet.add(`${exitCell.x},${exitCell.y}`);
-  const order = bfsOrder(walls);
-  const candidates = order.filter(c => !nodeSet.has(`${c.x},${c.y}`));
-  const shuffled = candidates.sort(() => Math.random()-0.5);
-  const types = ['freeze','hint','boost','reveal'];
-  const count = { easy:6, normal:4, hard:2 }[state.difficulty] || 4;
-  return Array.from({length:Math.min(count, shuffled.length)}, (_, i) => ({
-    x: shuffled[i].x, y: shuffled[i].y,
-    type: types[i % types.length], collected: false,
+function placePowerups(walls,nodes,exitCell){
+  const nodeSet=new Set(nodes.map(n=>`${n.x},${n.y}`));
+  nodeSet.add('0,0'); if(exitCell)nodeSet.add(`${exitCell.x},${exitCell.y}`);
+  const order=bfsOrder(walls);
+  const candidates=order.filter(c=>!nodeSet.has(`${c.x},${c.y}`));
+  const shuffled=candidates.sort(()=>Math.random()-0.5);
+  const types=['freeze','hint','boost','reveal'];
+  const count={easy:6,normal:4,hard:2}[state.difficulty]||4;
+  return Array.from({length:Math.min(count,shuffled.length)},(_,i)=>({
+    x:shuffled[i].x,y:shuffled[i].y,type:types[i%types.length],collected:false,
   }));
 }
-
-// ── PARTICLES ──────────────────────────────────────────────────────
-const particles = [];
-function spawnParticles(wx, wy, color, count=6) {
-  for (let i=0; i<count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 0.5 + Math.random() * 2;
-    particles.push({
-      x: wx, y: wy,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 1, decay: 0.02 + Math.random() * 0.03,
-      color, size: 2 + Math.random() * 3,
-    });
-  }
+// Assign ~20% of nodes as bonus timed nodes
+function assignBonusNodes(nodes) {
+  const bonusCount = Math.max(1, Math.floor(nodes.length * 0.2));
+  const shuffled = [...nodes].sort(() => Math.random()-0.5);
+  shuffled.slice(0,bonusCount).forEach(n=>n.isBonus=true);
 }
 
-function updateParticles() {
-  for (let i = particles.length-1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx; p.y += p.vy;
-    p.vy += 0.05;
-    p.life -= p.decay;
-    if (p.life <= 0) particles.splice(i,1);
+// ── PARTICLES ────────────────────────────────────────────
+const particles=[];
+function spawnParticles(wx,wy,color,count=6){
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2,speed=0.5+Math.random()*2;
+    particles.push({x:wx,y:wy,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1,decay:0.02+Math.random()*0.03,color,size:2+Math.random()*3});
   }
 }
+function updateParticles(){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.05;p.life-=p.decay;if(p.life<=0)particles.splice(i,1);}}
+function drawParticles(){for(const p of particles){ctx.save();ctx.globalAlpha=p.life;ctx.shadowColor=p.color;ctx.shadowBlur=6;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();ctx.restore();}}
 
-function drawParticles() {
-  for (const p of particles) {
-    ctx.save();
-    ctx.globalAlpha = p.life;
-    ctx.shadowColor = p.color; ctx.shadowBlur = 6;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-// ── GAME STATE ─────────────────────────────────────────────────────
-let state = {
-  screen:'start', playerName:'', difficulty:'normal',
-  maze:null, nodes:[], powerups:[], exit:null,
-  questionCount:0,
-  questions:[],
-  player:{x:0,y:0},
-  timer:0, timerInterval:null,
-  correct:0, wrong:0, totalAnswered:0,
-  streak:0, maxStreak:0,
-  activeNode:null, questionActive:false, finished:false,
-  visibleCells:new Set(),
-  keys:{}, lastMoveTime:0, animFrame:null,
+// ── GAME STATE ────────────────────────────────────────────
+let state={
+  screen:'start',playerName:'',difficulty:'normal',
+  maze:null,nodes:[],powerups:[],exit:null,questionCount:0,questions:[],
+  player:{x:0,y:0},timer:0,timerInterval:null,
+  correct:0,wrong:0,totalAnswered:0,streak:0,maxStreak:0,
+  activeNode:null,questionActive:false,finished:false,
+  visibleCells:new Set(),keys:{},lastMoveTime:0,animFrame:null,
   powerupInventory:{freeze:0,hint:0,boost:0,reveal:0},
-  frozen:false, freezeEnd:0,
-  boostActive:false,
-  revealed:false, revealEnd:0,
+  frozen:false,freezeEnd:0,boostActive:false,revealed:false,revealEnd:0,
   activeHintEliminated:[],
-  lastPlayerPos:{x:-1,y:-1},
+  isDaily:false,
+  correctQuestions:[], // track which questions were answered correctly for lore+badges
+  bonusTimerInterval:null, bonusTimeLeft:0,
+  exitUnlocked:false,
 };
 
-// ── CANVAS ─────────────────────────────────────────────────────────
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const miniMapCanvas = document.getElementById('miniMap');
-const miniCtx = miniMapCanvas.getContext('2d');
+// ── CANVAS ───────────────────────────────────────────────
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const miniMapCanvas=document.getElementById('miniMap');
+const miniCtx=miniMapCanvas.getContext('2d');
 
-function resizeCanvas() {
-  const wrapper = document.getElementById('canvasWrapper');
-  const maxW = wrapper.clientWidth, maxH = wrapper.clientHeight;
-  const dw = MAZE_W*CELL+2, dh = MAZE_H*CELL+2;
-  const scale = Math.min(maxW/dw, maxH/dh, 1);
-  canvas.width = dw; canvas.height = dh;
-  canvas.style.width = (dw*scale)+'px';
-  canvas.style.height = (dh*scale)+'px';
+function resizeCanvas(){
+  const wrapper=document.getElementById('canvasWrapper');
+  const maxW=wrapper.clientWidth,maxH=wrapper.clientHeight;
+  const dw=MAZE_W*CELL+2,dh=MAZE_H*CELL+2;
+  const scale=Math.min(maxW/dw,maxH/dh,1);
+  canvas.width=dw;canvas.height=dh;
+  canvas.style.width=(dw*scale)+'px';canvas.style.height=(dh*scale)+'px';
 }
 
-// ── DRAWING ────────────────────────────────────────────────────────
-let time = 0;
-const PU_ICONS  = { freeze:'FRZ', hint:'HINT', boost:'BOOST', reveal:'REVEAL' };
-const PU_COLORS = { freeze:'#00cfff', hint:'#ffe600', boost:'#ff6b35', reveal:'#b400ff' };
-
-const stoneOffsets = {};
-function getStoneOffsets(key) {
-  if (!stoneOffsets[key]) {
-    const r = [];
-    for (let i=0; i<8; i++) r.push({x:Math.random()*CELL*0.8,y:Math.random()*CELL*0.8,w:3+Math.random()*6,h:1+Math.random()*2});
-    stoneOffsets[key] = r;
-  }
+// ── DRAWING ───────────────────────────────────────────────
+let time=0;
+const PU_ICONS={freeze:'FRZ',hint:'HINT',boost:'BOOST',reveal:'REVEAL'};
+const PU_COLORS={freeze:'#00cfff',hint:'#ffe600',boost:'#ff6b35',reveal:'#b400ff'};
+const stoneOffsets={};
+function getStoneOffsets(key){
+  if(!stoneOffsets[key]){const r=[];for(let i=0;i<8;i++)r.push({x:Math.random()*CELL*0.8,y:Math.random()*CELL*0.8,w:3+Math.random()*6,h:1+Math.random()*2});stoneOffsets[key]=r;}
   return stoneOffsets[key];
 }
 
-function drawMaze() {
-  ctx.fillStyle = '#020609';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+function isExitUnlocked() {
+  const needed=Math.ceil(state.questionCount*(EXIT_GATE[state.difficulty]||0.6));
+  const answered=state.nodes.filter(n=>n.answered).length;
+  return answered>=needed;
+}
 
-  const walls = state.maze;
-  const vis = state.visibleCells;
-  const fullReveal = state.revealed && Date.now() < state.revealEnd;
+function drawMaze(){
+  ctx.fillStyle='#020609'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const walls=state.maze,vis=state.visibleCells,fullReveal=state.revealed&&Date.now()<state.revealEnd;
 
-  for (let y=0; y<MAZE_H; y++) {
-    for (let x=0; x<MAZE_W; x++) {
-      const key = `${x},${y}`;
-      const isVisible = vis.has(key);
-      if (!isVisible && !fullReveal) continue;
-      const cx=x*CELL+1, cy=y*CELL+1;
+  for(let y=0;y<MAZE_H;y++){for(let x=0;x<MAZE_W;x++){
+    const key=`${x},${y}`,isVisible=vis.has(key);
+    if(!isVisible&&!fullReveal)continue;
+    const cx=x*CELL+1,cy=y*CELL+1;
+    const grad=ctx.createLinearGradient(cx,cy,cx+CELL,cy+CELL);
+    grad.addColorStop(0,isVisible?'#0c1520':'#060c12');
+    grad.addColorStop(1,isVisible?'#07101a':'#030810');
+    ctx.fillStyle=grad; ctx.fillRect(cx,cy,CELL,CELL);
+    if(isVisible){const stones=getStoneOffsets(key);ctx.fillStyle='#0a1825';for(const s of stones)ctx.fillRect(cx+s.x,cy+s.y,s.w,s.h);}
+    ctx.strokeStyle=isVisible?'#0d1e2e':'#050d14';ctx.lineWidth=0.5;ctx.strokeRect(cx,cy,CELL,CELL);
+  }}
 
-      const grad = ctx.createLinearGradient(cx, cy, cx+CELL, cy+CELL);
-      grad.addColorStop(0, isVisible ? '#0c1520' : '#060c12');
-      grad.addColorStop(1, isVisible ? '#07101a' : '#030810');
-      ctx.fillStyle = grad;
-      ctx.fillRect(cx, cy, CELL, CELL);
+  const px=state.player.x*CELL+CELL/2+1,py=state.player.y*CELL+CELL/2+1,lightRad=CELL*2.5;
+  const lg=ctx.createRadialGradient(px,py,0,px,py,lightRad);
+  lg.addColorStop(0,state.frozen?'#00cfff18':'#00f5ff12');lg.addColorStop(1,'transparent');
+  ctx.fillStyle=lg;ctx.fillRect(Math.max(0,px-lightRad),Math.max(0,py-lightRad),lightRad*2,lightRad*2);
 
-      if (isVisible) {
-        const stones = getStoneOffsets(key);
-        ctx.fillStyle = '#0a1825';
-        for (const s of stones) ctx.fillRect(cx+s.x, cy+s.y, s.w, s.h);
-      }
-
-      ctx.strokeStyle = isVisible ? '#0d1e2e' : '#050d14';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(cx, cy, CELL, CELL);
-    }
-  }
-
-  const px = state.player.x*CELL+CELL/2+1;
-  const py = state.player.y*CELL+CELL/2+1;
-  const lightRad = CELL * 2.5;
-  const lightGrad = ctx.createRadialGradient(px, py, 0, px, py, lightRad);
-  lightGrad.addColorStop(0, state.frozen ? '#00cfff18' : '#00f5ff12');
-  lightGrad.addColorStop(1, 'transparent');
-  ctx.fillStyle = lightGrad;
-  ctx.fillRect(Math.max(0,px-lightRad), Math.max(0,py-lightRad), lightRad*2, lightRad*2);
-
-  for (let y=0; y<MAZE_H; y++) {
-    for (let x=0; x<MAZE_W; x++) {
-      const key = `${x},${y}`;
-      if (!vis.has(key) && !fullReveal) continue;
-      const cx=x*CELL+1, cy=y*CELL+1;
-      const w = walls[y][x];
-      const wallCol = state.frozen ? '#00cfff' : '#00f5ff';
-      if (y===0) drawWall(cx, cy, cx+CELL, cy, wallCol);
-      if (x===0) drawWall(cx, cy, cx, cy+CELL, wallCol);
-      if (w.right) drawWall(cx+CELL, cy, cx+CELL, cy+CELL, wallCol);
-      if (w.bottom) drawWall(cx, cy+CELL, cx+CELL, cy+CELL, wallCol);
-    }
-  }
+  for(let y=0;y<MAZE_H;y++){for(let x=0;x<MAZE_W;x++){
+    const key=`${x},${y}`;if(!vis.has(key)&&!fullReveal)continue;
+    const cx=x*CELL+1,cy=y*CELL+1,w=walls[y][x];
+    const wc=state.frozen?'#00cfff':'#00f5ff';
+    if(y===0)drawWall(cx,cy,cx+CELL,cy,wc);if(x===0)drawWall(cx,cy,cx,cy+CELL,wc);
+    if(w.right)drawWall(cx+CELL,cy,cx+CELL,cy+CELL,wc);if(w.bottom)drawWall(cx,cy+CELL,cx+CELL,cy+CELL,wc);
+  }}
 
   // Power-ups
-  for (const pu of state.powerups) {
-    if (pu.collected) continue;
-    const key=`${pu.x},${pu.y}`;
-    if (!vis.has(key) && !fullReveal) continue;
-    const ppx=pu.x*CELL+CELL/2+1, ppy=pu.y*CELL+CELL/2+1;
-    const bob = Math.sin(time*0.08+pu.x+pu.y)*3;
-    const col = PU_COLORS[pu.type];
-
-    const halo = ctx.createRadialGradient(ppx, ppy+bob, 0, ppx, ppy+bob, 16);
-    halo.addColorStop(0, col+'44');
-    halo.addColorStop(1, 'transparent');
-    ctx.fillStyle = halo;
-    ctx.fillRect(ppx-16, ppy+bob-16, 32, 32);
-
-    ctx.save();
-    ctx.shadowColor = col; ctx.shadowBlur = 10+5*Math.abs(Math.sin(time*0.05));
-    ctx.font = `${15+Math.abs(bob)*0.5}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(PU_ICONS[pu.type], ppx, ppy+bob);
-    ctx.restore();
+  for(const pu of state.powerups){
+    if(pu.collected)continue; const key=`${pu.x},${pu.y}`;if(!vis.has(key)&&!fullReveal)continue;
+    const ppx=pu.x*CELL+CELL/2+1,ppy=pu.y*CELL+CELL/2+1,bob=Math.sin(time*0.08+pu.x+pu.y)*3;
+    const col=PU_COLORS[pu.type];
+    const halo=ctx.createRadialGradient(ppx,ppy+bob,0,ppx,ppy+bob,16);
+    halo.addColorStop(0,col+'44');halo.addColorStop(1,'transparent');
+    ctx.fillStyle=halo;ctx.fillRect(ppx-16,ppy+bob-16,32,32);
+    ctx.save();ctx.shadowColor=col;ctx.shadowBlur=10+5*Math.abs(Math.sin(time*0.05));
+    ctx.font=`${15+Math.abs(bob)*0.5}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(PU_ICONS[pu.type],ppx,ppy+bob);ctx.restore();
   }
 
   // Question nodes
-  for (const node of state.nodes) {
-    const key=`${node.x},${node.y}`;
-    if (!vis.has(key) && !fullReveal) continue;
-    const nx=node.x*CELL+CELL/2+1, ny=node.y*CELL+CELL/2+1;
-
-    if (node.answered) {
-      ctx.save();
-      ctx.shadowColor = '#00ff9d'; ctx.shadowBlur = 6;
-      ctx.beginPath(); ctx.arc(nx, ny, 5, 0, Math.PI*2);
-      ctx.fillStyle = '#00ff9d'; ctx.fill();
-      ctx.restore();
+  for(const node of state.nodes){
+    const key=`${node.x},${node.y}`;if(!vis.has(key)&&!fullReveal)continue;
+    const nx=node.x*CELL+CELL/2+1,ny=node.y*CELL+CELL/2+1;
+    if(node.answered){
+      ctx.save();ctx.shadowColor='#00ff9d';ctx.shadowBlur=6;
+      ctx.beginPath();ctx.arc(nx,ny,5,0,Math.PI*2);ctx.fillStyle='#00ff9d';ctx.fill();ctx.restore();
     } else {
-      const pulse = 0.7+0.3*Math.sin(time*0.06+node.x+node.y);
-      const col = '#7b00ff';
-      const r = 7*pulse;
-
-      const glowGrad = ctx.createRadialGradient(nx, ny, 0, nx, ny, r*2.5);
-      glowGrad.addColorStop(0, col+'55');
-      glowGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(nx-r*2.5, ny-r*2.5, r*5, r*5);
-
-      ctx.save();
-      ctx.shadowColor = col; ctx.shadowBlur = 12*pulse;
-      ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI*2);
-      ctx.fillStyle = col; ctx.fill();
-      ctx.beginPath(); ctx.arc(nx-r*0.3, ny-r*0.3, r*0.3, 0, Math.PI*2);
-      ctx.fillStyle = col+'99'; ctx.fill();
+      // Bonus nodes pulse gold; regular nodes pulse purple
+      const isBonus=node.isBonus;
+      const col=isBonus?'#ffd700':'#7b00ff';
+      const pulse=0.7+0.3*Math.sin(time*(isBonus?0.12:0.06)+node.x+node.y);
+      const r=7*pulse+(isBonus?2:0);
+      const gGrad=ctx.createRadialGradient(nx,ny,0,nx,ny,r*2.5);
+      gGrad.addColorStop(0,col+'55');gGrad.addColorStop(1,'transparent');
+      ctx.fillStyle=gGrad;ctx.fillRect(nx-r*2.5,ny-r*2.5,r*5,r*5);
+      ctx.save();ctx.shadowColor=col;ctx.shadowBlur=12*pulse;
+      ctx.beginPath();ctx.arc(nx,ny,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+      ctx.beginPath();ctx.arc(nx-r*0.3,ny-r*0.3,r*0.3,0,Math.PI*2);ctx.fillStyle=col+'99';ctx.fill();
       ctx.restore();
-
-      ctx.save();
-      ctx.translate(nx, ny);
-      ctx.rotate(time * 0.03);
-      ctx.beginPath();
-      for (let a=0; a<4; a++) {
-        ctx.arc(0, 0, r+4, (a/4)*Math.PI*2, (a/4+0.15)*Math.PI*2);
+      // Bonus node gets lightning bolt label
+      if(isBonus){
+        ctx.save();ctx.fillStyle='#ffd700';ctx.shadowColor='#ffd700';ctx.shadowBlur=8;
+        ctx.font=`${8}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('⚡',nx,ny);ctx.restore();
       }
-      ctx.strokeStyle = col+'88'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.restore();
+      ctx.save();ctx.translate(nx,ny);ctx.rotate(time*(isBonus?0.06:0.03));
+      ctx.beginPath();for(let a=0;a<4;a++)ctx.arc(0,0,r+4,(a/4)*Math.PI*2,(a/4+0.15)*Math.PI*2);
+      ctx.strokeStyle=col+'88';ctx.lineWidth=2;ctx.stroke();ctx.restore();
     }
   }
 
-  // FIX: Exit portal drawn OUTSIDE the node loop — renders once, correct z-order
-  if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
-    const ex = state.exit.x*CELL+CELL/2+1, ey = state.exit.y*CELL+CELL/2+1;
-    const pulse = 0.7 + 0.3*Math.sin(time*0.08);
-    const r = 10 * pulse;
-    const glowGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, r*3);
-    glowGrad.addColorStop(0, EXIT_COLOR+'55');
-    glowGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(ex-r*3, ey-r*3, r*6, r*6);
-    ctx.save();
-    ctx.shadowColor = EXIT_COLOR; ctx.shadowBlur = 16*pulse;
-    ctx.beginPath(); ctx.arc(ex, ey, r, 0, Math.PI*2);
-    ctx.fillStyle = EXIT_COLOR; ctx.fill();
+  // Exit portal — outside node loop, correct z-order
+  if(state.exit&&(vis.has(`${state.exit.x},${state.exit.y}`)||fullReveal)){
+    const ex=state.exit.x*CELL+CELL/2+1,ey=state.exit.y*CELL+CELL/2+1;
+    const unlocked=isExitUnlocked();
+    const col=unlocked?EXIT_COLOR:'#555555';
+    const pulse=0.7+0.3*Math.sin(time*0.08);
+    const r=10*pulse;
+    const gGrad=ctx.createRadialGradient(ex,ey,0,ex,ey,r*3);
+    gGrad.addColorStop(0,col+'55');gGrad.addColorStop(1,'transparent');
+    ctx.fillStyle=gGrad;ctx.fillRect(ex-r*3,ey-r*3,r*6,r*6);
+    ctx.save();ctx.shadowColor=col;ctx.shadowBlur=unlocked?16*pulse:4;
+    ctx.beginPath();ctx.arc(ex,ey,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+    if(!unlocked){
+      ctx.fillStyle='#fff';ctx.font=`${10}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('🔒',ex,ey);
+    }
     ctx.restore();
-    ctx.save();
-    ctx.translate(ex, ey);
-    ctx.rotate(-time * 0.04);
-    ctx.beginPath();
-    ctx.arc(0, 0, r+5, 0, Math.PI*2);
-    ctx.strokeStyle = EXIT_COLOR+'aa'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.restore();
+    ctx.save();ctx.translate(ex,ey);ctx.rotate(-time*0.04);
+    ctx.beginPath();ctx.arc(0,0,r+5,0,Math.PI*2);
+    ctx.strokeStyle=col+'aa';ctx.lineWidth=2;ctx.stroke();ctx.restore();
   }
 
-  drawParticles();
-  updateParticles();
-  drawPlayer();
+  drawParticles();updateParticles();drawPlayer();
 }
 
-function drawWall(x1, y1, x2, y2, col='#00f5ff') {
-  ctx.save();
-  ctx.shadowColor = col; ctx.shadowBlur = 6;
-  ctx.strokeStyle = col; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  ctx.strokeStyle = col+'cc'; ctx.lineWidth = 0.5;
-  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+function drawWall(x1,y1,x2,y2,col='#00f5ff'){
+  ctx.save();ctx.shadowColor=col;ctx.shadowBlur=6;
+  ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.strokeStyle=col+'cc';ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
   ctx.restore();
 }
 
-function drawPlayer() {
-  const {x,y} = state.player;
-  const px = x*CELL+CELL/2+1, py = y*CELL+CELL/2+1;
-  const s = 1.5;
-  const bob = Math.sin(time*0.15)*1.5;
-
+function drawPlayer(){
+  const{x,y}=state.player,px=x*CELL+CELL/2+1,py=y*CELL+CELL/2+1,s=1.5,bob=Math.sin(time*0.15)*1.5;
   ctx.save();
-
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.beginPath();
-  ctx.ellipse(px, py+8*s+bob+4, 9*s, 3*s, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  if (state.boostActive) {
-    ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 20;
-  } else if (state.frozen) {
-    ctx.shadowColor = '#00cfff'; ctx.shadowBlur = 14;
-  } else {
-    ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 10;
-  }
-
-  ctx.fillStyle = state.boostActive ? '#4a1800' : '#1e2a3a';
-  ctx.fillRect(px-5*s, py-4*s+bob, 10*s, 10*s);
-  ctx.fillStyle = '#2a3a4a';
-  ctx.fillRect(px-8*s, py-3*s+bob, 3*s, 6*s);
-  ctx.fillRect(px+5*s, py-3*s+bob, 3*s, 6*s);
-  ctx.fillStyle = '#c8a882';
-  ctx.fillRect(px-8*s, py+2*s+bob, 3*s, 2*s);
-  ctx.fillRect(px+5*s, py+2*s+bob, 3*s, 2*s);
-  ctx.fillStyle = '#333';
-  ctx.fillRect(px-5*s, py+6*s+bob, 4*s, 6*s);
-  ctx.fillRect(px+1*s, py+6*s+bob, 4*s, 6*s);
-  ctx.fillStyle = '#222';
-  ctx.fillRect(px-6*s, py+11*s+bob, 5*s, 2*s);
-  ctx.fillRect(px+1*s, py+11*s+bob, 5*s, 2*s);
-  ctx.fillStyle = '#c8a882';
-  ctx.fillRect(px-2*s, py-6*s+bob, 4*s, 3*s);
-  ctx.fillStyle = '#c8a882';
-  ctx.fillRect(px-5*s, py-14*s+bob, 10*s, 10*s);
-  ctx.fillStyle = '#888';
-  ctx.fillRect(px-7*s, py-16*s+bob, 14*s, 2*s);
-  ctx.fillRect(px-4*s, py-20*s+bob, 8*s, 5*s);
-  ctx.fillStyle = '#666';
-  ctx.fillRect(px-4*s, py-16*s+bob, 8*s, 1*s);
-  ctx.fillStyle = '#111';
-  ctx.fillRect(px-3*s, py-12*s+bob, 2*s, 2*s);
-  ctx.fillRect(px+1*s, py-12*s+bob, 2*s, 2*s);
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(px-3*s+1, py-12*s+bob, 1, 1);
-  ctx.fillRect(px+1*s+1, py-12*s+bob, 1, 1);
-
-  if (state.boostActive) {
-    ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 30;
-    ctx.font = '16px serif'; ctx.textAlign = 'center';
-    ctx.fillText('🔥', px, py+14*s+bob);
-  }
-
+  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.ellipse(px,py+8*s+bob+4,9*s,3*s,0,0,Math.PI*2);ctx.fill();
+  if(state.boostActive){ctx.shadowColor='#ff6b35';ctx.shadowBlur=20;}
+  else if(state.frozen){ctx.shadowColor='#00cfff';ctx.shadowBlur=14;}
+  else{ctx.shadowColor='#00f5ff';ctx.shadowBlur=10;}
+  ctx.fillStyle=state.boostActive?'#4a1800':'#1e2a3a';ctx.fillRect(px-5*s,py-4*s+bob,10*s,10*s);
+  ctx.fillStyle='#2a3a4a';ctx.fillRect(px-8*s,py-3*s+bob,3*s,6*s);ctx.fillRect(px+5*s,py-3*s+bob,3*s,6*s);
+  ctx.fillStyle='#c8a882';ctx.fillRect(px-8*s,py+2*s+bob,3*s,2*s);ctx.fillRect(px+5*s,py+2*s+bob,3*s,2*s);
+  ctx.fillStyle='#333';ctx.fillRect(px-5*s,py+6*s+bob,4*s,6*s);ctx.fillRect(px+1*s,py+6*s+bob,4*s,6*s);
+  ctx.fillStyle='#222';ctx.fillRect(px-6*s,py+11*s+bob,5*s,2*s);ctx.fillRect(px+1*s,py+11*s+bob,5*s,2*s);
+  ctx.fillStyle='#c8a882';ctx.fillRect(px-2*s,py-6*s+bob,4*s,3*s);ctx.fillRect(px-5*s,py-14*s+bob,10*s,10*s);
+  ctx.fillStyle='#888';ctx.fillRect(px-7*s,py-16*s+bob,14*s,2*s);ctx.fillRect(px-4*s,py-20*s+bob,8*s,5*s);
+  ctx.fillStyle='#666';ctx.fillRect(px-4*s,py-16*s+bob,8*s,1*s);
+  ctx.fillStyle='#111';ctx.fillRect(px-3*s,py-12*s+bob,2*s,2*s);ctx.fillRect(px+1*s,py-12*s+bob,2*s,2*s);
+  ctx.fillStyle='#fff';ctx.fillRect(px-3*s+1,py-12*s+bob,1,1);ctx.fillRect(px+1*s+1,py-12*s+bob,1,1);
+  if(state.boostActive){ctx.shadowColor='#ff6b35';ctx.shadowBlur=30;ctx.font='16px serif';ctx.textAlign='center';ctx.fillText('🔥',px,py+14*s+bob);}
   ctx.restore();
 }
 
-function updateVisibility() {
-  const {x,y} = state.player;
-  const r = { easy:4, normal:3, hard:2 }[state.difficulty] || 3;
-  for (let dy=-r; dy<=r; dy++) {
-    for (let dx=-r; dx<=r; dx++) {
-      const nx=x+dx, ny=y+dy;
-      if (nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&dx*dx+dy*dy<=r*r) {
-        state.visibleCells.add(`${nx},${ny}`);
-      }
-    }
-  }
+function updateVisibility(){
+  const{x,y}=state.player,r={easy:4,normal:3,hard:2}[state.difficulty]||3;
+  for(let dy=-r;dy<=r;dy++){for(let dx=-r;dx<=r;dx++){
+    const nx=x+dx,ny=y+dy;
+    if(nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&dx*dx+dy*dy<=r*r)state.visibleCells.add(`${nx},${ny}`);
+  }}
 }
 
-function drawMiniMap() {
-  const mc = miniMapCanvas, mw=mc.width, mh=mc.height;
-  miniCtx.fillStyle = '#050a0f'; miniCtx.fillRect(0,0,mw,mh);
-  const cw=mw/MAZE_W, ch=mh/MAZE_H;
-  const fullReveal = state.revealed && Date.now()<state.revealEnd;
-
-  for (let y=0; y<MAZE_H; y++) {
-    for (let x=0; x<MAZE_W; x++) {
-      if (!state.visibleCells.has(`${x},${y}`) && !fullReveal) continue;
-      miniCtx.fillStyle = '#0d1f30';
-      miniCtx.fillRect(x*cw, y*ch, cw-0.5, ch-0.5);
-    }
+function drawMiniMap(){
+  const mc=miniMapCanvas,mw=mc.width,mh=mc.height;
+  miniCtx.fillStyle='#050a0f';miniCtx.fillRect(0,0,mw,mh);
+  const cw=mw/MAZE_W,ch=mh/MAZE_H,fullReveal=state.revealed&&Date.now()<state.revealEnd;
+  for(let y=0;y<MAZE_H;y++){for(let x=0;x<MAZE_W;x++){
+    if(!state.visibleCells.has(`${x},${y}`)&&!fullReveal)continue;
+    miniCtx.fillStyle='#0d1f30';miniCtx.fillRect(x*cw,y*ch,cw-0.5,ch-0.5);
+  }}
+  for(const pu of state.powerups){
+    if(pu.collected)continue;if(!state.visibleCells.has(`${pu.x},${pu.y}`)&&!fullReveal)continue;
+    miniCtx.fillStyle=PU_COLORS[pu.type];miniCtx.fillRect(pu.x*cw+cw*0.2,pu.y*ch+ch*0.2,cw*0.6,ch*0.6);
   }
-  for (const pu of state.powerups) {
-    if (pu.collected) continue;
-    if (!state.visibleCells.has(`${pu.x},${pu.y}`) && !fullReveal) continue;
-    miniCtx.fillStyle = PU_COLORS[pu.type];
-    miniCtx.fillRect(pu.x*cw+cw*0.2, pu.y*ch+ch*0.2, cw*0.6, ch*0.6);
+  for(const node of state.nodes){
+    if(!state.visibleCells.has(`${node.x},${node.y}`)&&!fullReveal)continue;
+    miniCtx.fillStyle=node.answered?'#00ff9d':node.isBonus?'#ffd700':'#7b00ff';
+    miniCtx.fillRect(node.x*cw+cw*0.25,node.y*ch+ch*0.25,cw*0.5,ch*0.5);
   }
-  for (const node of state.nodes) {
-    if (!state.visibleCells.has(`${node.x},${node.y}`) && !fullReveal) continue;
-    miniCtx.fillStyle = node.answered ? '#00ff9d' : '#7b00ff';
-    miniCtx.fillRect(node.x*cw+cw*0.25, node.y*ch+ch*0.25, cw*0.5, ch*0.5);
+  if(state.exit&&(state.visibleCells.has(`${state.exit.x},${state.exit.y}`)||fullReveal)){
+    miniCtx.fillStyle=isExitUnlocked()?EXIT_COLOR:'#555';
+    miniCtx.fillRect(state.exit.x*cw+cw*0.2,state.exit.y*ch+ch*0.2,cw*0.6,ch*0.6);
   }
-  if (state.exit && (state.visibleCells.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
-    miniCtx.fillStyle = EXIT_COLOR;
-    miniCtx.fillRect(state.exit.x*cw+cw*0.2, state.exit.y*ch+ch*0.2, cw*0.6, ch*0.6);
-  }
-  miniCtx.shadowColor = '#00f5ff'; miniCtx.shadowBlur = 4;
-  miniCtx.fillStyle = '#00f5ff';
-  miniCtx.fillRect(state.player.x*cw+cw*0.15, state.player.y*ch+ch*0.15, cw*0.7, ch*0.7);
-  miniCtx.shadowBlur = 0;
+  miniCtx.shadowColor='#00f5ff';miniCtx.shadowBlur=4;miniCtx.fillStyle='#00f5ff';
+  miniCtx.fillRect(state.player.x*cw+cw*0.15,state.player.y*ch+ch*0.15,cw*0.7,ch*0.7);
+  miniCtx.shadowBlur=0;
 }
 
-// ── MOVEMENT ───────────────────────────────────────────────────────
-const KEY_MAP = {
-  ArrowUp:{dx:0,dy:-1}, ArrowDown:{dx:0,dy:1},
-  ArrowLeft:{dx:-1,dy:0}, ArrowRight:{dx:1,dy:0},
-  w:{dx:0,dy:-1}, s:{dx:0,dy:1}, a:{dx:-1,dy:0}, d:{dx:1,dy:0},
-  W:{dx:0,dy:-1}, S:{dx:0,dy:1}, A:{dx:-1,dy:0}, D:{dx:1,dy:0},
-};
-
-function canMove(x, y, dx, dy) {
-  const w = state.maze;
-  if (dx===1)  return !w[y][x].right;
-  if (dx===-1) return x>0&&!w[y][x-1].right;
-  if (dy===1)  return !w[y][x].bottom;
-  if (dy===-1) return y>0&&!w[y-1][x].bottom;
+// ── MOVEMENT ──────────────────────────────────────────────
+const KEY_MAP={ArrowUp:{dx:0,dy:-1},ArrowDown:{dx:0,dy:1},ArrowLeft:{dx:-1,dy:0},ArrowRight:{dx:1,dy:0},w:{dx:0,dy:-1},s:{dx:0,dy:1},a:{dx:-1,dy:0},d:{dx:1,dy:0},W:{dx:0,dy:-1},S:{dx:0,dy:1},A:{dx:-1,dy:0},D:{dx:1,dy:0}};
+function canMove(x,y,dx,dy){
+  const w=state.maze;
+  if(dx===1)return!w[y][x].right;if(dx===-1)return x>0&&!w[y][x-1].right;
+  if(dy===1)return!w[y][x].bottom;if(dy===-1)return y>0&&!w[y-1][x].bottom;
   return false;
 }
-
-function tryMove(dx, dy) {
-  if (state.questionActive || state.finished) return;
-  const {x,y} = state.player;
-  const nx=x+dx, ny=y+dy;
-  if (nx<0||nx>=MAZE_W||ny<0||ny>=MAZE_H) return;
-  if (!canMove(x,y,dx,dy)) {
-    if (state.boostActive) {
-      state.boostActive = false;
-      showNotif('BOOST USED!', false);
-      updatePUDisplay();
-      spawnParticles(nx*CELL+CELL/2+1, ny*CELL+CELL/2+1, '#ff6b35', 10);
-    } else {
-      audio.play('wall');
-      const wx = (x + (dx===1?1:0))*CELL+1, wy = (y + (dy===1?1:0))*CELL+1;
-      spawnParticles(wx+CELL*0.5, wy+CELL*0.5, '#00f5ff', 4);
+function tryMove(dx,dy){
+  if(state.questionActive||state.finished)return;
+  const{x,y}=state.player,nx=x+dx,ny=y+dy;
+  if(nx<0||nx>=MAZE_W||ny<0||ny>=MAZE_H)return;
+  if(!canMove(x,y,dx,dy)){
+    if(state.boostActive){
+      state.boostActive=false;showNotif('BOOST USED!');updatePUDisplay();
+      spawnParticles(nx*CELL+CELL/2+1,ny*CELL+CELL/2+1,'#ff6b35',10);
+    } else { audio.play('wall');spawnParticles((x+(dx===1?1:0))*CELL+1+CELL*0.5,(y+(dy===1?1:0))*CELL+1+CELL*0.5,'#00f5ff',4);return; }
+  }
+  state.player.x=nx;state.player.y=ny;audio.play('step');
+  if(Math.random()<0.2)spawnParticles(nx*CELL+CELL/2+1,ny*CELL+CELL/2+1,'#00f5ff33',3);
+  updateVisibility();checkPowerupPickup();checkNode();checkExit();
+  updateExitLockBar();
+}
+function checkPowerupPickup(){
+  const{x,y}=state.player,pu=state.powerups.find(p=>p.x===x&&p.y===y&&!p.collected);
+  if(!pu)return;pu.collected=true;state.powerupInventory[pu.type]++;updatePUDisplay();showPUPopup(pu.type);audio.play('powerup');
+  spawnParticles(x*CELL+CELL/2+1,y*CELL+CELL/2+1,PU_COLORS[pu.type],14);
+}
+function checkNode(){
+  const{x,y}=state.player,node=state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
+  if(!node)return;
+  state.activeNode=node;state.questionActive=true;state.activeHintEliminated=[];
+  audio.play('node');showQuestion(node.qIdx);updateNodeChecklist();
+}
+function checkExit(){
+  if(!state.exit||state.finished)return;
+  if(state.player.x===state.exit.x&&state.player.y===state.exit.y){
+    if(state.questionActive)return;
+    if(!isExitUnlocked()){
+      const needed=Math.ceil(state.questionCount*(EXIT_GATE[state.difficulty]||0.6));
+      const answered=state.nodes.filter(n=>n.answered).length;
+      showNotif(`🔒 ANSWER ${needed-answered} MORE QUESTION${needed-answered>1?'S':''} TO UNLOCK EXIT`,true);
       return;
     }
-  }
-  state.player.x = nx; state.player.y = ny;
-  audio.play('step');
-  if (Math.random() < 0.2) {
-    spawnParticles(nx*CELL+CELL/2+1, ny*CELL+CELL/2+1, '#00f5ff33', 3);
-  }
-  updateVisibility();
-  checkPowerupPickup();
-  checkNode();
-  checkExit();
-}
-
-function checkPowerupPickup() {
-  const {x,y} = state.player;
-  const pu = state.powerups.find(p=>p.x===x&&p.y===y&&!p.collected);
-  if (!pu) return;
-  pu.collected = true;
-  state.powerupInventory[pu.type]++;
-  updatePUDisplay();
-  showPUPopup(pu.type);
-  audio.play('powerup');
-  spawnParticles(x*CELL+CELL/2+1, y*CELL+CELL/2+1, PU_COLORS[pu.type], 14);
-}
-
-function checkNode() {
-  const {x,y} = state.player;
-  const node = state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
-  if (!node) return;
-  state.activeNode = node;
-  state.questionActive = true;
-  state.activeHintEliminated = [];
-  audio.play('node');
-  showQuestion(node.qIdx);
-  updateNodeChecklist();
-}
-
-function checkExit() {
-  // FIX: only block if a question is literally being shown right now, not on a stale flag
-  if (!state.exit || state.finished) return;
-  if (state.player.x === state.exit.x && state.player.y === state.exit.y) {
-    if (state.questionActive) return; // wait until question resolves
     finishGame();
   }
 }
-
-// ── POWER-UPS ──────────────────────────────────────────────────────
-function usePowerup(type) {
-  if (state.powerupInventory[type] <= 0) { showNotif(`No ${type.toUpperCase()} charges left!`, true); return; }
-  if (type==='hint' && !state.questionActive) { showNotif('HINT only works at a question node!', true); return; }
-
-  state.powerupInventory[type]--;
-  updatePUDisplay();
-  audio.play('powerup');
-
-  switch(type) {
-    case 'freeze':
-      state.frozen = true; state.freezeEnd = Date.now()+15000;
-      // FIX: update timer display class immediately so freeze animation shows without 1s delay
-      document.getElementById('hudTimer').className = 'hud-value hud-timer frozen';
-      showNotif('TIME FROZEN for 15 seconds!');
-      setTimeout(()=>{ state.frozen=false; showNotif('Time freeze expired'); }, 15000);
-      break;
-    case 'hint':
-      if (!state.questionActive) break;
-      const q = state.questions[state.activeNode.qIdx];
-      const wrongIdxs = q.opts.map((_,i)=>i).filter(i=>i!==q.a&&!state.activeHintEliminated.includes(i));
-      const toElim = wrongIdxs.sort(()=>Math.random()-0.5).slice(0,2);
-      toElim.forEach(i=>state.activeHintEliminated.push(i));
-      applyHintElimination(toElim);
-      showNotif('2 wrong answers eliminated!');
-      break;
-    case 'boost':
-      state.boostActive = true;
-      showNotif('WALL BOOST active - pass through next wall!');
-      break;
-    case 'reveal':
-      state.revealed = true; state.revealEnd = Date.now()+5000;
-      showNotif('FULL MAP revealed for 5 seconds!');
-      setTimeout(()=>{ state.revealed=false; }, 5000);
-      break;
+function updateExitLockBar(){
+  const bar=document.getElementById('exitLockBar');
+  if(!bar)return;
+  if(isExitUnlocked()){bar.textContent='🔓 EXIT UNLOCKED — REACH THE PORTAL';bar.className='exit-lock-bar unlocked';}
+  else{
+    const needed=Math.ceil(state.questionCount*(EXIT_GATE[state.difficulty]||0.6));
+    const answered=state.nodes.filter(n=>n.answered).length;
+    bar.textContent=`🔒 EXIT LOCKED — ${needed-answered} MORE NEEDED`;bar.className='exit-lock-bar';
   }
 }
 
-function applyHintElimination(indices) {
-  const isMobile = window.innerWidth<=720;
-  const ansEl = isMobile ? document.getElementById('qOverlayAnswers') : document.getElementById('answersContainer');
-  if (!ansEl) return;
-  const btns = ansEl.querySelectorAll('.answer-btn');
-  indices.forEach(i=>{ if(btns[i]) btns[i].classList.add('eliminated'); });
+// ── BONUS TIMER ───────────────────────────────────────────
+const BONUS_WINDOW = 10; // seconds to answer for time bonus
+let bonusTimerInterval = null;
+function startBonusTimer(isMobile) {
+  let elapsed=0;
+  const barEl=document.getElementById(isMobile?'bonusTimerBarMobile':'bonusTimerBar');
+  const fillEl=document.getElementById(isMobile?'bonusTimerFillMobile':'bonusTimerFill');
+  if(barEl)barEl.classList.add('show');
+  if(fillEl)fillEl.style.width='100%';
+  clearInterval(bonusTimerInterval);
+  bonusTimerInterval=setInterval(()=>{
+    elapsed+=0.1;
+    const pct=Math.max(0,100-(elapsed/BONUS_WINDOW*100));
+    if(fillEl)fillEl.style.width=pct+'%';
+    if(elapsed>=BONUS_WINDOW){clearInterval(bonusTimerInterval);}
+  },100);
+  // Store start time for reward calculation
+  state.bonusNodeStartTime=Date.now();
+}
+function stopBonusTimer(isMobile){
+  clearInterval(bonusTimerInterval);
+  const barEl=document.getElementById(isMobile?'bonusTimerBarMobile':'bonusTimerBar');
+  if(barEl)barEl.classList.remove('show');
 }
 
-function updatePUDisplay() {
-  const inv = state.powerupInventory;
-  ['freeze','hint','boost','reveal'].forEach(t => {
-    const cap = t.charAt(0).toUpperCase()+t.slice(1);
-    const countEl = document.getElementById('pu'+cap+'Count');
-    const chipEl = document.getElementById('pu'+cap);
-    if(countEl) countEl.textContent = inv[t];
-    if(chipEl) { chipEl.disabled = inv[t]===0; chipEl.classList.toggle('empty', inv[t]===0); }
+// ── POWER-UPS ─────────────────────────────────────────────
+function usePowerup(type){
+  if(state.powerupInventory[type]<=0){showNotif(`No ${type.toUpperCase()} charges left!`,true);return;}
+  if(type==='hint'&&!state.questionActive){showNotif('HINT only works at a question node!',true);return;}
+  state.powerupInventory[type]--;updatePUDisplay();audio.play('powerup');
+  switch(type){
+    case 'freeze':
+      state.frozen=true;state.freezeEnd=Date.now()+15000;
+      document.getElementById('hudTimer').className='hud-value hud-timer frozen';
+      showNotif('TIME FROZEN for 15 seconds!');
+      setTimeout(()=>{state.frozen=false;showNotif('Time freeze expired');},15000);break;
+    case 'hint':
+      if(!state.questionActive)break;
+      const q=state.questions[state.activeNode.qIdx];
+      const wrongIdxs=q.opts.map((_,i)=>i).filter(i=>i!==q.a&&!state.activeHintEliminated.includes(i));
+      const toElim=wrongIdxs.sort(()=>Math.random()-0.5).slice(0,2);
+      toElim.forEach(i=>state.activeHintEliminated.push(i));
+      applyHintElimination(toElim);showNotif('2 wrong answers eliminated!');break;
+    case 'boost':state.boostActive=true;showNotif('WALL BOOST active — pass through next wall!');break;
+    case 'reveal':
+      state.revealed=true;state.revealEnd=Date.now()+5000;showNotif('FULL MAP revealed for 5 seconds!');
+      setTimeout(()=>{state.revealed=false;},5000);break;
+  }
+}
+function applyHintElimination(indices){
+  const isMobile=window.innerWidth<=720;
+  const ansEl=document.getElementById(isMobile?'qOverlayAnswers':'answersContainer');
+  if(!ansEl)return;
+  const btns=ansEl.querySelectorAll('.answer-btn');
+  indices.forEach(i=>{if(btns[i])btns[i].classList.add('eliminated');});
+}
+function updatePUDisplay(){
+  ['freeze','hint','boost','reveal'].forEach(t=>{
+    const cap=t.charAt(0).toUpperCase()+t.slice(1);
+    const ce=document.getElementById('pu'+cap+'Count'),ch=document.getElementById('pu'+cap);
+    if(ce)ce.textContent=state.powerupInventory[t];
+    if(ch){ch.disabled=state.powerupInventory[t]===0;ch.classList.toggle('empty',state.powerupInventory[t]===0);}
   });
 }
-
-function showPUPopup(type) {
-  const popup = document.getElementById('puPopup');
-  const names = {freeze:'TIME FREEZE',hint:'HINT CHIP',boost:'WALL BOOST',reveal:'MAP REVEAL'};
-  const descs = {freeze:'Pauses timer for 15 seconds',hint:'Eliminates 2 wrong answers',boost:'Pass through one wall',reveal:'See full map for 5 seconds'};
-  document.getElementById('puPopupIcon').textContent = PU_ICONS[type];
-  document.getElementById('puPopupTitle').textContent = names[type]+' COLLECTED';
-  document.getElementById('puPopupDesc').textContent = descs[type];
-  popup.classList.add('show');
-  setTimeout(()=>popup.classList.remove('show'), 2200);
+function showPUPopup(type){
+  const popup=document.getElementById('puPopup');
+  const names={freeze:'TIME FREEZE',hint:'HINT CHIP',boost:'WALL BOOST',reveal:'MAP REVEAL'};
+  const descs={freeze:'Pauses timer for 15 seconds',hint:'Eliminates 2 wrong answers',boost:'Pass through one wall',reveal:'See full map for 5 seconds'};
+  document.getElementById('puPopupIcon').textContent=PU_ICONS[type];
+  document.getElementById('puPopupTitle').textContent=names[type]+' COLLECTED';
+  document.getElementById('puPopupDesc').textContent=descs[type];
+  popup.classList.add('show');setTimeout(()=>popup.classList.remove('show'),2200);
 }
 
-// ── QUESTIONS ──────────────────────────────────────────────────────
-const DIFF_CONFIG = {
-  easy:   { penalty:5,  pool:[1,2] },
-  normal: { penalty:10, pool:[1,2,3] },
-  hard:   { penalty:20, pool:[2,3] },
-};
-
-function getQuestionsForDifficulty(count) {
-  const conf = DIFF_CONFIG[state.difficulty];
-  let pool = QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
-  if (pool.length < count) pool = [...QUESTIONS];
-  return pool.sort(()=>Math.random()-0.5).slice(0, count);
+// ── QUESTIONS ─────────────────────────────────────────────
+const DIFF_CONFIG={easy:{penalty:5,pool:[1,2]},normal:{penalty:10,pool:[1,2,3]},hard:{penalty:20,pool:[2,3]}};
+function getQuestionsForDifficulty(count){
+  const conf=DIFF_CONFIG[state.difficulty];
+  let pool=QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
+  if(pool.length<count)pool=[...QUESTIONS];
+  return pool.sort(()=>Math.random()-0.5).slice(0,count);
 }
-
-function showQuestion(qIdx) {
-  const q = state.questions[qIdx];
-  if (!q) return;
-  const isMobile = window.innerWidth<=720;
-  const textEl = isMobile ? document.getElementById('qOverlayText') : document.getElementById('questionText');
-  const ansEl  = isMobile ? document.getElementById('qOverlayAnswers') : document.getElementById('answersContainer');
-  const fbEl   = isMobile ? document.getElementById('qOverlayFeedback') : document.getElementById('feedbackMsg');
-  const factEl = isMobile ? document.getElementById('qOverlayFact') : document.getElementById('factBox');
-
-  const total = state.questionCount || state.questions.length;
-  textEl.textContent = `[Q${qIdx+1}/${total}] ${q.q}`;
-  fbEl.textContent = ''; fbEl.className = 'feedback-msg';
-  factEl.textContent = ''; factEl.className = 'fact-box';
-
-  const cat = CATEGORIES[q.category] || {label:q.category,color:'#00f5ff'};
-  const badgeEl = isMobile ? document.getElementById('qOverlayCatBadge') : document.getElementById('qCatBadge');
-  if (badgeEl) { badgeEl.textContent=cat.label; badgeEl.style.color=cat.color; badgeEl.style.display='inline-block'; }
-
-  const keys = ['A','B','C','D'];
-  ansEl.innerHTML = '';
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'answer-btn';
-    btn.innerHTML = `<span class="answer-key">${keys[i]}</span><span>${opt}</span>`;
-    if (state.activeHintEliminated.includes(i)) btn.classList.add('eliminated');
-    btn.addEventListener('click', () => handleAnswer(i, qIdx, btn, ansEl, fbEl, factEl, isMobile));
-    btn.addEventListener('touchend', (e) => { e.preventDefault(); handleAnswer(i, qIdx, btn, ansEl, fbEl, factEl, isMobile); });
+function showQuestion(qIdx){
+  const q=state.questions[qIdx];if(!q)return;
+  const isMobile=window.innerWidth<=720;
+  const textEl=document.getElementById(isMobile?'qOverlayText':'questionText');
+  const ansEl=document.getElementById(isMobile?'qOverlayAnswers':'answersContainer');
+  const fbEl=document.getElementById(isMobile?'qOverlayFeedback':'feedbackMsg');
+  const factEl=document.getElementById(isMobile?'qOverlayFact':'factBox');
+  const total=state.questionCount||state.questions.length;
+  const isBonus=state.activeNode&&state.activeNode.isBonus;
+  textEl.textContent=`${isBonus?'⚡ BONUS ':''}[Q${qIdx+1}/${total}] ${q.q}`;
+  fbEl.textContent='';fbEl.className='feedback-msg';factEl.textContent='';factEl.className='fact-box';
+  const cat=CATEGORIES[q.category]||{label:q.category,color:'#00f5ff'};
+  const badgeEl=document.getElementById(isMobile?'qOverlayCatBadge':'qCatBadge');
+  if(badgeEl){badgeEl.textContent=cat.label;badgeEl.style.color=cat.color;badgeEl.style.display='inline-block';}
+  const keys=['A','B','C','D'];
+  ansEl.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');btn.className='answer-btn';
+    btn.innerHTML=`<span class="answer-key">${keys[i]}</span><span>${opt}</span>`;
+    if(state.activeHintEliminated.includes(i))btn.classList.add('eliminated');
+    btn.addEventListener('click',()=>handleAnswer(i,qIdx,btn,ansEl,fbEl,factEl,isMobile));
+    btn.addEventListener('touchend',e=>{e.preventDefault();handleAnswer(i,qIdx,btn,ansEl,fbEl,factEl,isMobile);});
     ansEl.appendChild(btn);
   });
-
-  if (isMobile) document.getElementById('qOverlay').classList.add('show');
+  if(isMobile)document.getElementById('qOverlay').classList.add('show');
+  // Start bonus timer if this is a bonus node
+  if(isBonus)startBonusTimer(isMobile);
 }
 
-function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
-  const q = state.questions[qIdx];
-  const btns = ansEl.querySelectorAll('.answer-btn');
-  if (clickedBtn.disabled) return;
-  btns.forEach(b => b.disabled = true);
-
-  const isCorrect = chosen === q.a;
+function handleAnswer(chosen,qIdx,clickedBtn,ansEl,fbEl,factEl,isMobile){
+  const q=state.questions[qIdx];
+  const btns=ansEl.querySelectorAll('.answer-btn');
+  if(clickedBtn.disabled)return;btns.forEach(b=>b.disabled=true);
+  const isBonus=state.activeNode&&state.activeNode.isBonus;
+  // Calculate time since bonus node was entered
+  const bonusEarned=isBonus&&state.bonusNodeStartTime&&(Date.now()-state.bonusNodeStartTime)/1000<BONUS_WINDOW;
+  if(isBonus)stopBonusTimer(isMobile);
+  const isCorrect=chosen===q.a;
   btns[q.a].classList.add('correct');
-  if (!isCorrect) {
-    clickedBtn.classList.add('wrong');
-    state.wrong++;
-    state.streak = 0;
-    const penalty = DIFF_CONFIG[state.difficulty].penalty;
-    state.timer += penalty;
-    audio.play('wrong');
-    showNotif(`INCORRECT - +${penalty}s PENALTY`, true);
-    spawnParticles(state.player.x*CELL+CELL/2+1, state.player.y*CELL+CELL/2+1, '#ff3860', 8);
+  if(!isCorrect){
+    clickedBtn.classList.add('wrong');state.wrong++;state.streak=0;
+    const penalty=DIFF_CONFIG[state.difficulty].penalty;state.timer+=penalty;
+    audio.play('wrong');showNotif(`INCORRECT — +${penalty}s PENALTY`,true);
+    spawnParticles(state.player.x*CELL+CELL/2+1,state.player.y*CELL+CELL/2+1,'#ff3860',8);
   } else {
-    state.correct++;
-    state.streak++;
-    if (state.streak > state.maxStreak) state.maxStreak = state.streak;
-    audio.play('correct');
-    showNotif(state.streak>2 ? `CORRECT — ${state.streak}x STREAK!` : 'CORRECT — NODE UNLOCKED!', false);
-    spawnParticles(state.player.x*CELL+CELL/2+1, state.player.y*CELL+CELL/2+1, '#00ff9d', 12);
+    state.correct++;state.streak++;if(state.streak>state.maxStreak)state.maxStreak=state.streak;
+    // Track correct question for lore + badge purposes
+    state.correctQuestions.push(q);
+    unlockLoreCard(q.id);
+    let notifMsg='CORRECT — NODE UNLOCKED!';
+    if(bonusEarned){
+      const timeSaved=10;state.timer=Math.max(0,state.timer-timeSaved);
+      audio.play('bonus');notifMsg=`⚡ BONUS! -${timeSaved}s TIME SAVED!`;
+      showNotif(notifMsg,false,true);
+    } else {
+      audio.play('correct');
+      if(state.streak>2)notifMsg=`CORRECT — ${state.streak}x STREAK!`;
+      showNotif(notifMsg);
+    }
+    spawnParticles(state.player.x*CELL+CELL/2+1,state.player.y*CELL+CELL/2+1,bonusEarned?'#ffd700':'#00ff9d',bonusEarned?20:12);
   }
-
-  state.totalAnswered++;
-  updateHUD();
-  fbEl.textContent = isCorrect ? 'CORRECT — PATH UNLOCKED' : 'INCORRECT — PENALTY APPLIED';
-  fbEl.className = 'feedback-msg ' + (isCorrect ? 'correct' : 'wrong');
-  factEl.textContent = '★ ' + q.fact;
-  factEl.className = 'fact-box show';
-
-  const delay = isCorrect ? 1800 : 2500;
-  setTimeout(() => {
-    state.activeNode.answered = true;
-    state.questionActive = false;
-    state.activeHintEliminated = [];
-    if (isMobile) document.getElementById('qOverlay').classList.remove('show');
-    const badgeEl = document.getElementById('qCatBadge');
-    if (badgeEl) badgeEl.style.display = 'none';
-    updateHUD();
-    updateNodeChecklist();
-    // Re-check exit in case player was standing on it when question resolved
-    checkExit();
-  }, delay);
+  state.totalAnswered++;updateHUD();
+  fbEl.textContent=isCorrect?'CORRECT — PATH UNLOCKED':'INCORRECT — PENALTY APPLIED';
+  fbEl.className='feedback-msg '+(isCorrect?'correct':'wrong');
+  factEl.textContent='★ '+q.fact;factEl.className='fact-box show';
+  const delay=isCorrect?1800:2500;
+  setTimeout(()=>{
+    state.activeNode.answered=true;state.questionActive=false;state.activeHintEliminated=[];
+    if(isMobile)document.getElementById('qOverlay').classList.remove('show');
+    const badgeEl=document.getElementById('qCatBadge');if(badgeEl)badgeEl.style.display='none';
+    updateHUD();updateNodeChecklist();updateExitLockBar();checkExit();
+  },delay);
 }
 
-// ── NODE CHECKLIST ─────────────────────────────────────────────────
-function buildNodeChecklist() {
-  const el = document.getElementById('nodeChecklist');
-  el.innerHTML = '';
-  for (let i=0; i<state.questionCount; i++) {
-    const div = document.createElement('div');
-    div.className = 'node-check';
-    div.id = `nodeCheck${i}`;
-    div.textContent = i+1;
+// ── NODE CHECKLIST ────────────────────────────────────────
+function buildNodeChecklist(){
+  const el=document.getElementById('nodeChecklist');el.innerHTML='';
+  for(let i=0;i<state.questionCount;i++){
+    const div=document.createElement('div');div.className='node-check';div.id=`nodeCheck${i}`;
+    div.textContent=i+1;
+    if(state.nodes[i]&&state.nodes[i].isBonus)div.classList.add('bonus');
     el.appendChild(div);
   }
 }
-
-function updateNodeChecklist() {
-  for (let i=0; i<state.questionCount; i++) {
-    const el = document.getElementById(`nodeCheck${i}`);
-    if (!el) continue;
-    const node = state.nodes[i];
-    if (!node) continue;
-    if (node.answered) el.className = 'node-check done';
-    else if (state.activeNode && state.activeNode.qIdx === i) el.className = 'node-check active';
-    else el.className = 'node-check';
+function updateNodeChecklist(){
+  for(let i=0;i<state.questionCount;i++){
+    const el=document.getElementById(`nodeCheck${i}`);if(!el)continue;
+    const node=state.nodes[i];if(!node)continue;
+    if(node.answered)el.className='node-check done';
+    else if(state.activeNode&&state.activeNode.qIdx===i)el.className='node-check active';
+    else el.className=`node-check${node.isBonus?' bonus':''}`;
   }
 }
 
-// ── HUD ────────────────────────────────────────────────────────────
-function updateHUD() {
-  const answered = state.nodes.filter(n=>n.answered).length;
-  const total = state.questionCount || state.nodes.length || 1;
-  document.getElementById('hudQCount').textContent = answered;
-  const totalEl = document.getElementById('hudQTotal');
-  if (totalEl) totalEl.textContent = total;
-  document.getElementById('hudProgress').style.width = (answered/total*100)+'%';
-  const acc = state.totalAnswered>0 ? Math.round(state.correct/state.totalAnswered*100)+'%' : '--';
-  document.getElementById('hudAccuracy').textContent = acc;
-  document.getElementById('hudStreak').textContent = state.streak;
+// ── HUD ────────────────────────────────────────────────────
+function updateHUD(){
+  const answered=state.nodes.filter(n=>n.answered).length,total=state.questionCount||state.nodes.length||1;
+  document.getElementById('hudQCount').textContent=answered;
+  const te=document.getElementById('hudQTotal');if(te)te.textContent=total;
+  document.getElementById('hudProgress').style.width=(answered/total*100)+'%';
+  const acc=state.totalAnswered>0?Math.round(state.correct/state.totalAnswered*100)+'%':'--';
+  document.getElementById('hudAccuracy').textContent=acc;
+  document.getElementById('hudStreak').textContent=state.streak;
   updatePUDisplay();
 }
-
-function formatTime(secs) {
-  const m = Math.floor(secs/60).toString().padStart(2,'0');
-  const s = (secs%60).toString().padStart(2,'0');
-  return `${m}:${s}`;
+function formatTime(secs){
+  const m=Math.floor(secs/60).toString().padStart(2,'0'),s=(secs%60).toString().padStart(2,'0');return`${m}:${s}`;
 }
-
-function startTimer() {
-  state.timerInterval = setInterval(() => {
-    if (state.frozen && Date.now() < state.freezeEnd) return;
+function startTimer(){
+  state.timerInterval=setInterval(()=>{
+    if(state.frozen&&Date.now()<state.freezeEnd)return;
     state.timer++;
-    const el = document.getElementById('hudTimer');
-    el.textContent = formatTime(state.timer);
-    // Class is set immediately on freeze activation; here we only handle unfreeze/urgent
-    if (!state.frozen) {
-      el.className = state.timer > 300 ? 'hud-value hud-timer urgent' : 'hud-value hud-timer';
-    }
-  }, 1000);
+    const el=document.getElementById('hudTimer');el.textContent=formatTime(state.timer);
+    if(!state.frozen)el.className=state.timer>300?'hud-value hud-timer urgent':'hud-value hud-timer';
+  },1000);
 }
 
-// ── NOTIFICATION ───────────────────────────────────────────────────
+// ── NOTIFICATION ──────────────────────────────────────────
 let notifTimeout;
-function showNotif(msg, isWrong=false) {
-  const el = document.getElementById('notif');
-  el.textContent = msg;
-  el.className = 'notif show' + (isWrong ? ' wrong-notif' : '');
-  clearTimeout(notifTimeout);
-  notifTimeout = setTimeout(() => el.className='notif', 2200);
+function showNotif(msg,isWrong=false,isBonus=false){
+  const el=document.getElementById('notif');
+  el.textContent=msg;
+  el.className='notif show'+(isWrong?' wrong-notif':isBonus?' bonus-notif':'');
+  clearTimeout(notifTimeout);notifTimeout=setTimeout(()=>el.className='notif',2600);
 }
 
-// ── GAME LOOP ──────────────────────────────────────────────────────
-function gameLoop() {
+// ── GAME LOOP ─────────────────────────────────────────────
+function gameLoop(){
   time++;
-  const now = Date.now();
-  if (now - state.lastMoveTime > 140 && !state.questionActive) {
-    for (const [key, dir] of Object.entries(KEY_MAP)) {
-      if (state.keys[key]) { tryMove(dir.dx, dir.dy); state.lastMoveTime = now; break; }
-    }
+  const now=Date.now();
+  if(now-state.lastMoveTime>140&&!state.questionActive){
+    for(const[key,dir]of Object.entries(KEY_MAP)){if(state.keys[key]){tryMove(dir.dx,dir.dy);state.lastMoveTime=now;break;}}
   }
-  drawMaze();
-  drawMiniMap();
-  state.animFrame = requestAnimationFrame(gameLoop);
+  drawMaze();drawMiniMap();state.animFrame=requestAnimationFrame(gameLoop);
 }
 
-// ── INIT GAME ──────────────────────────────────────────────────────
-async function initGame(name, difficulty) {
-  audio.init(); audio.resume();
-
-  state.playerName = name;
-  state.difficulty = difficulty;
-  state.maze = generateMaze(MAZE_W, MAZE_H);
-  state.questionCount = Math.min(MAX_QUESTIONS_PER_GAME, QUESTIONS.length);
-  state.questions = getQuestionsForDifficulty(state.questionCount);
-  state.exit = placeExit(state.maze);
-  state.nodes = placeNodes(state.maze, state.questionCount, state.exit);
-  state.powerups = placePowerups(state.maze, state.nodes, state.exit);
-  state.player = {x:0,y:0};
-  state.timer=0; state.correct=0; state.wrong=0; state.totalAnswered=0;
-  state.streak=0; state.maxStreak=0;
-  state.activeNode=null; state.questionActive=false; state.finished=false;
-  state.visibleCells = new Set();
-  state.keys={}; state.lastMoveTime=0;
+// ── INIT GAME ─────────────────────────────────────────────
+async function initGame(name,difficulty,isDaily=false){
+  audio.init();audio.resume();
+  stopBgMaze();
+  state.playerName=name;state.difficulty=difficulty;state.isDaily=isDaily;
+  if(isDaily){
+    state.maze=generateMazeSeeded(MAZE_W,MAZE_H,getDailyMazeSeed());
+    state.questionCount=Math.min(MAX_QUESTIONS_PER_GAME,QUESTIONS.length);
+    state.questions=getDailyQuestions(state.questionCount);
+  } else {
+    state.maze=generateMaze(MAZE_W,MAZE_H);
+    state.questionCount=Math.min(MAX_QUESTIONS_PER_GAME,QUESTIONS.length);
+    state.questions=getQuestionsForDifficulty(state.questionCount);
+  }
+  state.exit=placeExit(state.maze);
+  state.nodes=placeNodes(state.maze,state.questionCount,state.exit);
+  assignBonusNodes(state.nodes);
+  state.powerups=placePowerups(state.maze,state.nodes,state.exit);
+  state.player={x:0,y:0};state.timer=0;state.correct=0;state.wrong=0;state.totalAnswered=0;
+  state.streak=0;state.maxStreak=0;state.activeNode=null;state.questionActive=false;state.finished=false;
+  state.visibleCells=new Set();state.keys={};state.lastMoveTime=0;
   state.powerupInventory={freeze:0,hint:0,boost:0,reveal:0};
-  state.frozen=false; state.boostActive=false; state.revealed=false;
-  state.activeHintEliminated=[];
-  particles.length = 0;
-
+  state.frozen=false;state.boostActive=false;state.revealed=false;state.activeHintEliminated=[];
+  state.correctQuestions=[];state.bonusNodeStartTime=0;
+  particles.length=0;
   updateVisibility();
-
-  const diffLabels = {easy:'EASY',normal:'NORMAL',hard:'HARD'};
-  const diffColors = {easy:'var(--correct)',normal:'var(--accent)',hard:'var(--wrong)'};
-  document.getElementById('hudName').textContent = name.toUpperCase();
-  document.getElementById('hudDiff').textContent = diffLabels[difficulty];
-  document.getElementById('hudDiff').style.color = diffColors[difficulty];
-
-  showScreen('game');
-  resizeCanvas();
-  buildNodeChecklist();
-  startTimer();
-  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+  const diffLabels={easy:'EASY',normal:'NORMAL',hard:'HARD'};
+  const diffColors={easy:'var(--correct)',normal:'var(--accent)',hard:'var(--wrong)'};
+  document.getElementById('hudName').textContent=name.toUpperCase();
+  document.getElementById('hudDiff').textContent=isDaily?'DAILY':diffLabels[difficulty];
+  document.getElementById('hudDiff').style.color=isDaily?'var(--bonus)':diffColors[difficulty];
+  const dtag=document.getElementById('dailyGameTag');
+  if(dtag)dtag.style.display=isDaily?'block':'none';
+  showScreen('game');resizeCanvas();buildNodeChecklist();startTimer();
+  if(state.animFrame)cancelAnimationFrame(state.animFrame);
   gameLoop();
-
   document.getElementById('muteBtn').classList.add('show');
-  if ('ontouchstart' in window || window.innerWidth <= 720) {
-    document.getElementById('dpad').classList.add('show');
-  }
-
-  document.getElementById('questionText').textContent = 'Find question nodes, answer them, then reach the exit to win.';
-  document.getElementById('answersContainer').innerHTML = '';
-  document.getElementById('feedbackMsg').textContent = '';
-  document.getElementById('factBox').className = 'fact-box';
-  document.getElementById('qCatBadge').style.display = 'none';
-  updateHUD();
+  if('ontouchstart'in window||window.innerWidth<=720)document.getElementById('dpad').classList.add('show');
+  document.getElementById('questionText').textContent='Find question nodes, answer them, then reach the exit to win.';
+  document.getElementById('answersContainer').innerHTML='';document.getElementById('feedbackMsg').textContent='';
+  document.getElementById('factBox').className='fact-box';document.getElementById('qCatBadge').style.display='none';
+  updateHUD();updateExitLockBar();
 }
 
-// ── FINISH ─────────────────────────────────────────────────────────
-async function finishGame() {
-  if (state.finished) return;
-  state.finished = true;
-  clearInterval(state.timerInterval);
-  cancelAnimationFrame(state.animFrame);
-  audio.play('escape');
-
-  for (let i=0; i<30; i++) {
-    const cols = ['#00f5ff','#7b00ff','#00ff9d','#ffb800','#ff006e'];
-    spawnParticles(
-      Math.random()*canvas.width, Math.random()*canvas.height,
-      cols[Math.floor(Math.random()*cols.length)], 1
-    );
+// ── FINISH ────────────────────────────────────────────────
+async function finishGame(){
+  if(state.finished)return;state.finished=true;
+  clearInterval(state.timerInterval);cancelAnimationFrame(state.animFrame);audio.play('escape');
+  if(state.isDaily)markDailyDone();
+  // Award mastery badges
+  const catCorrects=recordCatCorrects(state.correctQuestions);
+  const newBadges=checkNewBadges(catCorrects);
+  // Celebration particles
+  for(let i=0;i<30;i++){
+    const cols=['#00f5ff','#7b00ff','#00ff9d','#ffb800','#ff006e'];
+    spawnParticles(Math.random()*canvas.width,Math.random()*canvas.height,cols[Math.floor(Math.random()*cols.length)],1);
   }
-
-  const totalAnswered = state.totalAnswered;
-  const acc = totalAnswered > 0 ? Math.round(state.correct / totalAnswered * 100) : 0;
-  const score = state.correct * 1000000 - state.timer;
-  const entry = {
-    name: state.playerName,
-    time: state.timer,
-    accuracy: acc,
-    correct: state.correct,
-    totalAnswered,
-    totalQuestions: state.questionCount,
-    streak: state.maxStreak,
-    difficulty: state.difficulty,
-    score,
-    date: Date.now(),
+  const totalAnswered=state.totalAnswered;
+  const acc=totalAnswered>0?Math.round(state.correct/totalAnswered*100):0;
+  const score=state.correct*1000000-state.timer;
+  const entry={
+    name:state.playerName,time:state.timer,accuracy:acc,correct:state.correct,
+    totalAnswered,totalQuestions:state.questionCount,streak:state.maxStreak,
+    difficulty:state.isDaily?'daily':state.difficulty,score,date:Date.now(),isDaily:state.isDaily,
   };
-
-  document.getElementById('finishTitle').textContent = acc >= 90 ? 'MASTERY ESCAPED!' : acc >= 70 ? 'ESCAPED!' : 'BARELY ESCAPED!';
-  document.getElementById('finishTime').textContent = formatTime(state.timer);
-  document.getElementById('finishAccuracy').textContent = `${state.correct}/${state.questionCount}`;
-  document.getElementById('finishStreak').textContent = state.maxStreak+'x';
-  showScreen('finish');
-  setFbStatus('Finish', 'SAVING...', 'loading');
-
+  document.getElementById('finishTitle').textContent=acc>=90?'MASTERY ESCAPED!':acc>=70?'ESCAPED!':'BARELY ESCAPED!';
+  document.getElementById('finishTime').textContent=formatTime(state.timer);
+  document.getElementById('finishAccuracy').textContent=`${state.correct}/${state.questionCount}`;
+  document.getElementById('finishStreak').textContent=state.maxStreak+'x';
+  // Show new badges
+  const nbRow=document.getElementById('newBadgesRow');
+  if(newBadges.length&&nbRow){
+    nbRow.innerHTML=`<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);width:100%;text-align:center;letter-spacing:0.2em;margin-bottom:4px;">🏆 NEW BADGES EARNED</div>`
+      +newBadges.map(b=>`<div class="new-badge-chip" style="color:${b.color}">${b.label}</div>`).join('');
+  } else if(nbRow){nbRow.innerHTML='';}
+  showScreen('finish');setFbStatus('Finish','SAVING...','loading');
   await saveToFirebase(entry);
-  const lb = getLeaderboard('all');
-  const rank = lb.findIndex(e => {
-    const n = normalizeEntry(e);
-    return n.name === entry.name && n.correct === entry.correct && n.time === entry.time;
-  }) + 1 || lb.length;
-  document.getElementById('finishRank').textContent = '#'+(rank||'?');
-  renderLeaderboard('lbBody', lb, entry);
-
-  document.getElementById('muteBtn').classList.remove('show');
-  document.getElementById('dpad').classList.remove('show');
+  const lb=getLeaderboard('all');
+  const rank=lb.findIndex(e=>{const n=normalizeEntry(e);return n.name===entry.name&&n.correct===entry.correct&&n.time===entry.time;})+1||lb.length;
+  document.getElementById('finishRank').textContent='#'+(rank||'?');
+  renderLeaderboard('lbBody',lb,entry);
+  document.getElementById('muteBtn').classList.remove('show');document.getElementById('dpad').classList.remove('show');
+  renderBadgesRow();
 }
 
-// ── LEADERBOARD ────────────────────────────────────────────────────
-function renderLeaderboard(elId, lb, highlight) {
-  const el = document.getElementById(elId);
-  if (!lb||!lb.length) {
-    el.innerHTML='<div style="padding:14px;font-family:Share Tech Mono,monospace;font-size:11px;color:#4a6878;text-align:center;">NO ENTRIES YET</div>';
-    return;
-  }
-  const diffBadge = {easy:'<span style="color:var(--correct);font-size:9px;">E</span>',normal:'<span style="color:var(--accent);font-size:9px;">N</span>',hard:'<span style="color:var(--wrong);font-size:9px;">H</span>'};
-  const rankClass = i => i===0?'lb-rank gold':i===1?'lb-rank silver':i===2?'lb-rank bronze':'lb-rank';
-  el.innerHTML = lb.slice(0,50).map((e,i) => {
-    const entry = normalizeEntry(e);
-    const isHL = highlight && entry.name===highlight.name && Math.abs(entry.time-highlight.time)<2;
-    return `<div class="lb-row ${isHL?'highlight-new':''}">
+// ── LEADERBOARD ───────────────────────────────────────────
+function renderLeaderboard(elId,lb,highlight){
+  const el=document.getElementById(elId);
+  if(!lb||!lb.length){el.innerHTML='<div style="padding:14px;font-family:Share Tech Mono,monospace;font-size:11px;color:#4a6878;text-align:center;">NO ENTRIES YET</div>';return;}
+  const diffBadge={easy:'<span style="color:var(--correct);font-size:9px;">E</span>',normal:'<span style="color:var(--accent);font-size:9px;">N</span>',hard:'<span style="color:var(--wrong);font-size:9px;">H</span>',daily:'<span style="color:var(--bonus);font-size:9px;">⚡</span>'};
+  const rankClass=i=>i===0?'lb-rank gold':i===1?'lb-rank silver':i===2?'lb-rank bronze':'lb-rank';
+  el.innerHTML=lb.slice(0,50).map((e,i)=>{
+    const entry=normalizeEntry(e);
+    const isHL=highlight&&entry.name===highlight.name&&Math.abs(entry.time-highlight.time)<2;
+    return`<div class="lb-row ${isHL?'highlight-new':''}">
       <span class="${rankClass(i)}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span>
       <span class="lb-name">${escapeHtml(entry.name||'ANON')}</span>
       <span class="lb-time">${formatTime(entry.time||0)}</span>
@@ -1783,156 +1821,140 @@ function renderLeaderboard(elId, lb, highlight) {
     </div>`;
   }).join('');
 }
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-function escapeHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ── SCREENS ────────────────────────────────────────────────────────
-function showScreen(name) {
+// ── SCREENS ────────────────────────────────────────────────
+function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
-  const el = document.getElementById(name+'Screen');
-  if(el) el.classList.remove('hidden');
-  state.screen = name;
+  const el=document.getElementById(name+'Screen');if(el)el.classList.remove('hidden');
+  state.screen=name;
+  if(name==='start'){startBgMaze();renderBadgesRow();updateDailyBanner();}
+  else{stopBgMaze();}
 }
 
-// ── CHARACTER PREVIEW ──────────────────────────────────────────────
-function drawCharPreview() {
-  const c = document.getElementById('charPreview');
-  const ctx2 = c.getContext('2d');
-  ctx2.clearRect(0,0,c.width,c.height);
-  const s=2, px=c.width/2, py=c.height/2+5;
-
-  ctx2.fillStyle='rgba(0,0,0,0.3)';
-  ctx2.beginPath(); ctx2.ellipse(px,py+20,12,4,0,0,Math.PI*2); ctx2.fill();
-
-  ctx2.fillStyle='#1e2a3a'; ctx2.fillRect(px-8*s,py-4*s,16*s,14*s);
-  ctx2.fillStyle='#2a3a4a';
-  ctx2.fillRect(px-12*s,py-2*s,4*s,8*s);
-  ctx2.fillRect(px+8*s,py-2*s,4*s,8*s);
-  ctx2.fillStyle='#c8a882'; ctx2.fillRect(px-3*s,py-6*s,6*s,3*s);
-  ctx2.fillStyle='#333'; ctx2.fillRect(px-8*s,py+10*s,6*s,8*s); ctx2.fillRect(px+2*s,py+10*s,6*s,8*s);
-  ctx2.fillStyle='#c8a882'; ctx2.fillRect(px-6*s,py-18*s,12*s,12*s);
-  ctx2.fillStyle='#888';
-  ctx2.fillRect(px-7*s,py-20*s,14*s,5*s);
-  ctx2.fillRect(px-10*s,py-17*s,20*s,2*s);
-  ctx2.fillStyle='#111';
-  ctx2.fillRect(px-4*s,py-14*s,2*s,2*s);
-  ctx2.fillRect(px+2*s,py-14*s,2*s,2*s);
+// ── CHARACTER PREVIEW ──────────────────────────────────────
+function drawCharPreview(){
+  const c=document.getElementById('charPreview'),ctx2=c.getContext('2d');
+  ctx2.clearRect(0,0,c.width,c.height);const s=2,px=c.width/2,py=c.height/2+5;
+  ctx2.fillStyle='rgba(0,0,0,0.3)';ctx2.beginPath();ctx2.ellipse(px,py+20,12,4,0,0,Math.PI*2);ctx2.fill();
+  ctx2.fillStyle='#1e2a3a';ctx2.fillRect(px-8*s,py-4*s,16*s,14*s);
+  ctx2.fillStyle='#2a3a4a';ctx2.fillRect(px-12*s,py-2*s,4*s,8*s);ctx2.fillRect(px+8*s,py-2*s,4*s,8*s);
+  ctx2.fillStyle='#c8a882';ctx2.fillRect(px-3*s,py-6*s,6*s,3*s);
+  ctx2.fillStyle='#333';ctx2.fillRect(px-8*s,py+10*s,6*s,8*s);ctx2.fillRect(px+2*s,py+10*s,6*s,8*s);
+  ctx2.fillStyle='#c8a882';ctx2.fillRect(px-6*s,py-18*s,12*s,12*s);
+  ctx2.fillStyle='#888';ctx2.fillRect(px-7*s,py-20*s,14*s,5*s);ctx2.fillRect(px-10*s,py-17*s,20*s,2*s);
+  ctx2.fillStyle='#111';ctx2.fillRect(px-4*s,py-14*s,2*s,2*s);ctx2.fillRect(px+2*s,py-14*s,2*s,2*s);
 }
 
-// ── TOUCH / SWIPE ──────────────────────────────────────────────────
-let touchStart = null;
-canvas.addEventListener('touchstart', e => {
-  touchStart = {x:e.touches[0].clientX, y:e.touches[0].clientY};
-  e.preventDefault();
-}, {passive:false});
-canvas.addEventListener('touchend', e => {
-  if (!touchStart) return;
-  const dx = e.changedTouches[0].clientX - touchStart.x;
-  const dy = e.changedTouches[0].clientY - touchStart.y;
-  if (Math.max(Math.abs(dx),Math.abs(dy)) < 12) return;
-  if (Math.abs(dx) > Math.abs(dy)) tryMove(dx>0?1:-1, 0);
-  else tryMove(0, dy>0?1:-1);
-  touchStart = null; e.preventDefault();
-}, {passive:false});
-
-function setupDpadBtn(id, dx, dy) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  btn.addEventListener('touchstart', e => { tryMove(dx,dy); e.preventDefault(); e.stopPropagation(); }, {passive:false});
-  btn.addEventListener('click', () => tryMove(dx,dy));
+// ── DAILY BANNER ──────────────────────────────────────────
+function updateDailyBanner(){
+  const sub=document.getElementById('dailySub');
+  const doneTag=document.getElementById('dailyDoneTag');
+  const done=hasDoneDaily();
+  if(sub)sub.textContent=`Today's challenge: ${getDailyKey()}`;
+  if(doneTag)doneTag.style.display=done?'block':'none';
 }
-setupDpadBtn('dUp', 0,-1);
-setupDpadBtn('dDown', 0,1);
-setupDpadBtn('dLeft', -1,0);
-setupDpadBtn('dRight', 1,0);
 
-// ── KEYBOARD ───────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key in KEY_MAP) {
-    state.keys[e.key] = true;
-    if (!state.questionActive) { const dir=KEY_MAP[e.key]; tryMove(dir.dx,dir.dy); state.lastMoveTime=Date.now(); }
+// ── TOUCH / SWIPE ─────────────────────────────────────────
+let touchStart=null;
+canvas.addEventListener('touchstart',e=>{touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!touchStart)return;const dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<12)return;
+  if(Math.abs(dx)>Math.abs(dy))tryMove(dx>0?1:-1,0);else tryMove(0,dy>0?1:-1);
+  touchStart=null;e.preventDefault();
+},{passive:false});
+function setupDpadBtn(id,dx,dy){
+  const btn=document.getElementById(id);if(!btn)return;
+  btn.addEventListener('touchstart',e=>{tryMove(dx,dy);e.preventDefault();e.stopPropagation();},{passive:false});
+  btn.addEventListener('click',()=>tryMove(dx,dy));
+}
+setupDpadBtn('dUp',0,-1);setupDpadBtn('dDown',0,1);setupDpadBtn('dLeft',-1,0);setupDpadBtn('dRight',1,0);
+
+// ── KEYBOARD ──────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key in KEY_MAP){
+    state.keys[e.key]=true;
+    if(!state.questionActive){const dir=KEY_MAP[e.key];tryMove(dir.dx,dir.dy);state.lastMoveTime=Date.now();}
     e.preventDefault();
   }
-  if (e.key==='1') usePowerup('freeze');
-  if (e.key==='2') usePowerup('hint');
-  if (e.key==='3') usePowerup('boost');
-  if (e.key==='4') usePowerup('reveal');
-  if (e.key==='m'||e.key==='M') audio.toggleMute();
+  if(e.key==='1')usePowerup('freeze');if(e.key==='2')usePowerup('hint');
+  if(e.key==='3')usePowerup('boost');if(e.key==='4')usePowerup('reveal');
+  if(e.key==='m'||e.key==='M')audio.toggleMute();
 });
-document.addEventListener('keyup', e => { state.keys[e.key]=false; });
+document.addEventListener('keyup',e=>{state.keys[e.key]=false;});
 
-// ── DIFFICULTY BUTTONS ─────────────────────────────────────────────
-document.querySelectorAll('.diff-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const d = btn.dataset.diff;
-    state.difficulty = d;
+// ── DIFFICULTY BUTTONS ────────────────────────────────────
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const d=btn.dataset.diff;state.difficulty=d;
     document.querySelectorAll('.diff-btn').forEach(b=>b.className='diff-btn');
-    btn.className = `diff-btn active-${d}`;
+    btn.className=`diff-btn active-${d}`;
   });
 });
 
-// ── POWER-UP BUTTON BINDINGS ───────────────────────────────────────
-['freeze','hint','boost','reveal'].forEach(type => {
-  const cap = type.charAt(0).toUpperCase()+type.slice(1);
-  const btn = document.getElementById('pu'+cap);
-  if (!btn) return;
-  btn.addEventListener('click', () => usePowerup(type));
-  btn.addEventListener('touchend', e => { e.preventDefault(); usePowerup(type); });
+// ── POWER-UP BINDINGS ─────────────────────────────────────
+['freeze','hint','boost','reveal'].forEach(type=>{
+  const cap=type.charAt(0).toUpperCase()+type.slice(1);
+  const btn=document.getElementById('pu'+cap);if(!btn)return;
+  btn.addEventListener('click',()=>usePowerup(type));
+  btn.addEventListener('touchend',e=>{e.preventDefault();usePowerup(type);});
 });
 
-// ── UI BINDINGS ────────────────────────────────────────────────────
-document.getElementById('startBtn').addEventListener('click', async () => {
-  const name = document.getElementById('playerName').value.trim() || 'ANON';
-  await initGame(name, state.difficulty);
+// ── UI BINDINGS ───────────────────────────────────────────
+document.getElementById('startBtn').addEventListener('click',async()=>{
+  const name=document.getElementById('playerName').value.trim()||'ANON';
+  await initGame(name,state.difficulty,false);
 });
-document.getElementById('playerName').addEventListener('keydown', e => {
-  if (e.key==='Enter') document.getElementById('startBtn').click();
+document.getElementById('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('startBtn').click();});
+
+document.getElementById('dailyBtn').addEventListener('click',async()=>{
+  const name=document.getElementById('playerName').value.trim()||'ANON';
+  await initGame(name,'normal',true);
+});
+document.getElementById('dailyBanner').addEventListener('click',async()=>{
+  const name=document.getElementById('playerName').value.trim()||'ANON';
+  await initGame(name,'normal',true);
 });
 
-document.getElementById('lbBtn').addEventListener('click', () => {
-  const lb = getLeaderboard('all');
-  renderLeaderboard('lbScreenBody', lb, null);
-  setFbStatus('Lb', fbConnected?'GLOBAL LEADERBOARD':'LOCAL LEADERBOARD', fbConnected?'connected':'dim');
+document.getElementById('lbBtn').addEventListener('click',()=>{
+  renderLeaderboard('lbScreenBody',getLeaderboard('all'),null);
+  setFbStatus('Lb',fbConnected?'GLOBAL LEADERBOARD':'LOCAL LEADERBOARD',fbConnected?'connected':'dim');
   showScreen('lb');
 });
-document.getElementById('lbBtnFinish').addEventListener('click', () => {
-  renderLeaderboard('lbScreenBody', getLeaderboard('all'), null); showScreen('lb');
-});
-document.getElementById('lbBackBtn').addEventListener('click', () => showScreen('start'));
+document.getElementById('lbBtnFinish').addEventListener('click',()=>{renderLeaderboard('lbScreenBody',getLeaderboard('all'),null);showScreen('lb');});
+document.getElementById('lbBackBtn').addEventListener('click',()=>showScreen('start'));
 
-document.getElementById('lbFilters').addEventListener('click', e => {
-  const btn = e.target.closest('[data-diff]');
-  if (!btn) return;
-  document.querySelectorAll('#lbFilters .cat-filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderLeaderboard('lbScreenBody', getLeaderboard(btn.dataset.diff), null);
+document.getElementById('lbFilters').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-diff]');if(!btn)return;
+  document.querySelectorAll('#lbFilters .cat-filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  renderLeaderboard('lbScreenBody',getLeaderboard(btn.dataset.diff),null);
 });
 
-document.getElementById('replayBtn').addEventListener('click', () => {
-  showScreen('start');
-  clearInterval(state.timerInterval);
-  cancelAnimationFrame(state.animFrame);
-});
+document.getElementById('replayBtn').addEventListener('click',()=>{showScreen('start');clearInterval(state.timerInterval);cancelAnimationFrame(state.animFrame);});
 
-document.getElementById('shareBtn').addEventListener('click', () => {
-  const acc = state.totalAnswered > 0 ? Math.round(state.correct/state.totalAnswered*100) : 0;
-  const diff = state.difficulty.toUpperCase();
-  const txt = `VOI MAZE [${diff}] | ${state.playerName} | Time: ${formatTime(state.timer)} | Correct: ${state.correct}/${state.questionCount} | Accuracy: ${acc}% | Streak: ${state.maxStreak}x | voi.network`;
+document.getElementById('shareBtn').addEventListener('click',()=>{
+  const acc=state.totalAnswered>0?Math.round(state.correct/state.totalAnswered*100):0;
+  const diff=state.isDaily?'DAILY':state.difficulty.toUpperCase();
+  const txt=`VOI MAZE [${diff}] | ${state.playerName} | Time: ${formatTime(state.timer)} | Correct: ${state.correct}/${state.questionCount} | Accuracy: ${acc}% | Streak: ${state.maxStreak}x | voi.network`;
   navigator.clipboard.writeText(txt).then(()=>showNotif('RESULT COPIED!'));
 });
 
-document.getElementById('muteBtn').addEventListener('click', () => audio.toggleMute());
+document.getElementById('muteBtn').addEventListener('click',()=>audio.toggleMute());
 
-window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas(); });
+document.getElementById('loreBtn').addEventListener('click',()=>{renderLoreGallery();document.getElementById('loreOverlay').classList.add('show');});
+document.getElementById('loreCloseBtn').addEventListener('click',()=>document.getElementById('loreOverlay').classList.remove('show'));
 
-// ── BOOT ───────────────────────────────────────────────────────────
-(async () => {
+window.addEventListener('resize',()=>{if(state.screen==='game')resizeCanvas();});
+
+// ── BOOT ──────────────────────────────────────────────────
+(async()=>{
   drawCharPreview();
   showScreen('start');
   await loadQuestions();
   await initFirebase();
+  updateDailyBanner();
+  renderBadgesRow();
 })();
 </script>
 </body>
