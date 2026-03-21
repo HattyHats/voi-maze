@@ -1,28 +1,3 @@
-Let me review the code thoroughly first.Good review. I found a few real bugs and issues. Here's my audit summary:
-
-**Bugs found:**
-- **Exit drawn inside node loop** (line 1213): The exit portal rendering is nested inside the `for (const node of state.nodes)` loop — it redraws the exit portal once per node every frame, which is wasteful and causes z-order inconsistencies
-- **`generateMaze` uses recursive `carve()`** which can stack-overflow on large mazes (23×23 is borderline safe but risky on some JS engines)
-- **`checkExit()` has a redundant `state.questionActive` guard** — the exit can theoretically be stepped on right as a question closes before the timeout fires
-- **`placeNodes` can place multiple nodes on the same cell** if `step` is very small and `order` has duplicates from the BFS slice logic
-- **Timer frozen-state CSS class** is only applied when the timer ticks, so there's a 1-second visual lag when freeze activates
-
-**Enhancement ideas:**
-
-Here are 8 ideas ranked by impact vs. effort:
-
-1. **Daily Challenge Mode** — same seed maze/questions every day for all players, so the leaderboard is a true head-to-head comparison. Huge for community engagement.
-2. **"VOI Lore" unlockable fact cards** — each answered question permanently unlocks a collectible card in a gallery accessible from the start screen. Players have a reason to replay.
-3. **Speed ghost / replay** — record your path as a sequence of moves, then let players race against their own ghost or a "best run" ghost on the leaderboard.
-4. **Category mastery badges** — earn a badge (Tokenomics Expert, Consensus Master, etc.) when you get all questions in a category correct across multiple games. Shown on leaderboard.
-5. **Animated entry screen with a mini live maze** in the background that solves itself — makes the game feel alive before you even start.
-6. **Timed bonus nodes** — a few nodes pulse gold and give a time *reduction* if answered correctly within 10 seconds of stepping on them. Adds urgency.
-7. **Multiplayer race** (longer term) — two players on the same maze, questions are locked per-player so you race to finish fastest.
-8. **Difficulty-gated exit** — the exit only unlocks after answering a minimum number of questions (e.g. 60% on Normal, 80% on Hard), preventing players from skipping to the exit.
-
-Now here's the fixed code with the exit-loop bug corrected, the frozen timer visual lag fixed, and a guard against duplicate node placement:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1962,4 +1937,3 @@ window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas
 </script>
 </body>
 </html>
-```
