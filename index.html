@@ -1,3 +1,28 @@
+Let me review the code thoroughly first.Good review. I found a few real bugs and issues. Here's my audit summary:
+
+**Bugs found:**
+- **Exit drawn inside node loop** (line 1213): The exit portal rendering is nested inside the `for (const node of state.nodes)` loop — it redraws the exit portal once per node every frame, which is wasteful and causes z-order inconsistencies
+- **`generateMaze` uses recursive `carve()`** which can stack-overflow on large mazes (23×23 is borderline safe but risky on some JS engines)
+- **`checkExit()` has a redundant `state.questionActive` guard** — the exit can theoretically be stepped on right as a question closes before the timeout fires
+- **`placeNodes` can place multiple nodes on the same cell** if `step` is very small and `order` has duplicates from the BFS slice logic
+- **Timer frozen-state CSS class** is only applied when the timer ticks, so there's a 1-second visual lag when freeze activates
+
+**Enhancement ideas:**
+
+Here are 8 ideas ranked by impact vs. effort:
+
+1. **Daily Challenge Mode** — same seed maze/questions every day for all players, so the leaderboard is a true head-to-head comparison. Huge for community engagement.
+2. **"VOI Lore" unlockable fact cards** — each answered question permanently unlocks a collectible card in a gallery accessible from the start screen. Players have a reason to replay.
+3. **Speed ghost / replay** — record your path as a sequence of moves, then let players race against their own ghost or a "best run" ghost on the leaderboard.
+4. **Category mastery badges** — earn a badge (Tokenomics Expert, Consensus Master, etc.) when you get all questions in a category correct across multiple games. Shown on leaderboard.
+5. **Animated entry screen with a mini live maze** in the background that solves itself — makes the game feel alive before you even start.
+6. **Timed bonus nodes** — a few nodes pulse gold and give a time *reduction* if answered correctly within 10 seconds of stepping on them. Adds urgency.
+7. **Multiplayer race** (longer term) — two players on the same maze, questions are locked per-player so you race to finish fastest.
+8. **Difficulty-gated exit** — the exit only unlocks after answering a minimum number of questions (e.g. 60% on Normal, 80% on Hard), preventing players from skipping to the exit.
+
+Now here's the fixed code with the exit-loop bug corrected, the frozen timer visual lag fixed, and a guard against duplicate node placement:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,7 +80,6 @@
     pointer-events: none;
   }
 
-  /* â”€â”€â”€ SCREENS â”€â”€â”€ */
   .screen {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
@@ -64,7 +88,6 @@
   }
   .screen.hidden { opacity: 0; pointer-events: none; }
 
-  /* â”€â”€â”€ START â”€â”€â”€ */
   #startScreen { background: radial-gradient(ellipse at 50% 30%, #0a1a2a 0%, #050a0f 70%); gap: 18px; }
 
   .logo-title {
@@ -148,14 +171,12 @@
     margin: 4px 0; opacity: 0.4;
   }
 
-  /* â”€â”€â”€ GAME SCREEN â”€â”€â”€ */
   #gameScreen {
     flex-direction: row; align-items: stretch; justify-content: flex-start;
     background: var(--bg); padding: 0;
   }
   #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; }
 
-  /* â”€â”€â”€ HUD â”€â”€â”€ */
   .hud {
     width: 290px; min-width: 220px; background: var(--panel);
     border-left: 1px solid var(--border);
@@ -187,7 +208,6 @@
     transition: width 0.4s ease; box-shadow: 0 0 8px var(--accent);
   }
 
-  /* Node checklist */
   .node-checklist {
     display: grid; grid-template-columns: repeat(5,1fr); gap: 3px;
   }
@@ -208,7 +228,6 @@
     text-transform: uppercase; margin-bottom: 4px;
   }
 
-  /* Power-ups */
   .powerups-row { display: flex; gap: 5px; flex-wrap: wrap; }
   .pu-chip {
     display: flex; align-items: center; gap: 4px;
@@ -227,7 +246,6 @@
   .pu-boost { color: var(--pu-boost); }
   .pu-reveal { color: var(--pu-reveal); }
 
-  /* Question panel */
   .question-panel {
     background: #080f17; border: 1px solid var(--accent); padding: 12px; flex: 1;
     display: flex; flex-direction: column; gap: 8px;
@@ -264,7 +282,6 @@
   }
   .fact-box.show { display: block; }
 
-  /* Mobile overlay */
   .q-overlay {
     position: fixed; inset: 0; background: #050a0fee;
     z-index: 500; display: none;
@@ -278,7 +295,6 @@
     max-height: 90vh; overflow-y: auto;
   }
 
-  /* Power-up popup */
   .pu-popup {
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -297,7 +313,6 @@
   .pu-popup-title { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: var(--warn); }
   .pu-popup-desc { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
 
-  /* Finish screen */
   #finishScreen {
     background: radial-gradient(ellipse at 50% 40%, #0d1a0d 0%, #050a0f 70%);
     gap: 16px; padding: 20px;
@@ -311,7 +326,6 @@
   .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 12px; text-align: center; }
   .stat-val { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: var(--accent); text-shadow: var(--glow); }
 
-  /* Leaderboard */
   .leaderboard { width: min(680px, 90vw); background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
   .lb-header {
     background: #0a1520; padding: 8px 14px;
@@ -370,7 +384,6 @@
   #lbScreen { gap: 14px; padding: 20px; background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f); }
   .lb-screen-title { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900; color: var(--accent2); text-shadow: var(--glow2); }
 
-  /* Home button */
   #homeBtn {
     position: fixed; top: 12px; left: 12px; z-index: 800;
     background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
@@ -382,7 +395,6 @@
   }
   #homeBtn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
 
-  /* Mute button */
   #muteBtn {
     position: fixed; top: 12px; right: 12px; z-index: 800;
     background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
@@ -393,7 +405,6 @@
   #muteBtn.show { display: block; }
   #muteBtn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Mobile D-pad */
   #dpad {
     position: fixed; bottom: 20px; right: 16px;
     display: none; grid-template-columns: 48px 48px 48px;
@@ -423,10 +434,7 @@
 </head>
 <body>
 
-<!-- HOME BUTTON -->
 <a id="homeBtn" href="https://www.earnwithhatty.com" title="Back to EarnWithHatty.com">HOME</a>
-
-<!-- MUTE BUTTON -->
 <button id="muteBtn">SOUND ON</button>
 
 <!-- START SCREEN -->
@@ -480,12 +488,11 @@
       <div class="hud-value hud-timer" id="hudTimer">00:00</div>
     </div>
     <div>
-        <div class="hud-label">NODE PROGRESS <span id="hudQCount" style="color:var(--accent)">0</span>/<span id="hudQTotal" style="color:var(--dim)">0</span></div>
+      <div class="hud-label">NODE PROGRESS <span id="hudQCount" style="color:var(--accent)">0</span>/<span id="hudQTotal" style="color:var(--dim)">0</span></div>
       <div class="progress-bar-container">
         <div class="progress-bar-fill" id="hudProgress" style="width:0%"></div>
       </div>
     </div>
-    <!-- Node checklist -->
     <div>
       <div class="hud-label">NODES CHECKLIST</div>
       <div class="node-checklist" id="nodeChecklist"></div>
@@ -496,17 +503,17 @@
         <div class="hud-value" id="hudAccuracy" style="font-size:18px;">--</div>
       </div>
       <div>
-          <div class="hud-label">STREAK</div>
+        <div class="hud-label">STREAK</div>
         <div class="hud-value" id="hudStreak" style="font-size:18px;color:var(--warn);">0</div>
       </div>
     </div>
     <div>
       <div class="hud-label">POWER-UPS <span style="color:var(--dim);font-size:9px;">[1] [2] [3] [4]</span></div>
       <div class="powerups-row" id="powerupsRow">
-          <button class="pu-chip pu-freeze" id="puFreeze" title="TIME FREEZE [1]">FRZ <span class="pu-count" id="puFreezeCount">0</span></button>
-          <button class="pu-chip pu-hint" id="puHint" title="HINT [2]">HINT <span class="pu-count" id="puHintCount">0</span></button>
-          <button class="pu-chip pu-boost" id="puBoost" title="BOOST [3]">BOOST <span class="pu-count" id="puBoostCount">0</span></button>
-          <button class="pu-chip pu-reveal" id="puReveal" title="REVEAL [4]">REVEAL <span class="pu-count" id="puRevealCount">0</span></button>
+        <button class="pu-chip pu-freeze" id="puFreeze" title="TIME FREEZE [1]">FRZ <span class="pu-count" id="puFreezeCount">0</span></button>
+        <button class="pu-chip pu-hint" id="puHint" title="HINT [2]">HINT <span class="pu-count" id="puHintCount">0</span></button>
+        <button class="pu-chip pu-boost" id="puBoost" title="BOOST [3]">BOOST <span class="pu-count" id="puBoostCount">0</span></button>
+        <button class="pu-chip pu-reveal" id="puReveal" title="REVEAL [4]">REVEAL <span class="pu-count" id="puRevealCount">0</span></button>
       </div>
     </div>
     <div>
@@ -518,7 +525,7 @@
         <div class="hud-label">ACTIVE CHALLENGE</div>
         <div id="qCatBadge" class="cat-badge" style="display:none;"></div>
       </div>
-        <div class="question-text" id="questionText">Find a node to receive a challenge. Reach the exit to win.</div>
+      <div class="question-text" id="questionText">Find a node to receive a challenge. Reach the exit to win.</div>
       <div id="answersContainer"></div>
       <div class="feedback-msg" id="feedbackMsg"></div>
       <div class="fact-box" id="factBox"></div>
@@ -541,8 +548,8 @@
 </div>
 
 <!-- POWER-UP PICKUP POPUP -->
-  <div class="pu-popup" id="puPopup">
-    <div class="pu-popup-icon" id="puPopupIcon">FRZ</div>
+<div class="pu-popup" id="puPopup">
+  <div class="pu-popup-icon" id="puPopupIcon">FRZ</div>
   <div class="pu-popup-title" id="puPopupTitle">POWER-UP COLLECTED</div>
   <div class="pu-popup-desc" id="puPopupDesc">TIME FREEZE acquired</div>
 </div>
@@ -553,7 +560,7 @@
   <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:0.3em;">VOI BLOCKCHAIN MASTERY CONFIRMED</div>
   <div class="stats-grid">
     <div class="stat-card"><div class="hud-label">TIME</div><div class="stat-val" id="finishTime">--</div></div>
-      <div class="stat-card"><div class="hud-label">CORRECT</div><div class="stat-val" id="finishAccuracy">--</div></div>
+    <div class="stat-card"><div class="hud-label">CORRECT</div><div class="stat-val" id="finishAccuracy">--</div></div>
     <div class="stat-card"><div class="hud-label">STREAK</div><div class="stat-val" id="finishStreak" style="color:var(--warn);">--</div></div>
     <div class="stat-card"><div class="hud-label">RANK</div><div class="stat-val" id="finishRank" style="color:var(--warn);">--</div></div>
   </div>
@@ -562,7 +569,7 @@
     <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);" id="fbStatusFinish">Saving to leaderboard...</span>
   </div>
   <div class="leaderboard" style="max-height:28vh;overflow-y:auto;">
-      <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
+    <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
     <div id="lbBody"></div>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
@@ -586,7 +593,7 @@
     <button class="cat-filter-btn" data-diff="hard" style="color:var(--wrong);">HARD</button>
   </div>
   <div class="leaderboard" style="max-height:55vh;overflow-y:auto;">
-      <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
+    <div class="lb-header"><span>#</span><span>OPERATIVE</span><span style="text-align:right">TIME</span><span style="text-align:right">Q</span><span style="text-align:right">DIFF</span></div>
     <div id="lbScreenBody"></div>
   </div>
   <button class="cyber-btn" id="lbBackBtn" style="width:200px;">BACK</button>
@@ -595,24 +602,24 @@
 <!-- D-PAD for mobile -->
 <div id="dpad">
   <div></div>
-    <button class="dpad-btn" id="dUp" style="grid-column:2;grid-row:1;">^</button>
+  <button class="dpad-btn" id="dUp" style="grid-column:2;grid-row:1;">▲</button>
   <div></div>
-    <button class="dpad-btn" id="dLeft" style="grid-column:1;grid-row:2;"><</button>
+  <button class="dpad-btn" id="dLeft" style="grid-column:1;grid-row:2;">◀</button>
   <div style="grid-column:2;grid-row:2;"></div>
-    <button class="dpad-btn" id="dRight" style="grid-column:3;grid-row:2;">></button>
+  <button class="dpad-btn" id="dRight" style="grid-column:3;grid-row:2;">▶</button>
   <div></div>
-    <button class="dpad-btn" id="dDown" style="grid-column:2;grid-row:3;">v</button>
+  <button class="dpad-btn" id="dDown" style="grid-column:2;grid-row:3;">▼</button>
   <div></div>
 </div>
 
 <div class="notif" id="notif"></div>
 
 <script>
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  VOI MAZE v3.0 â€” Enhanced Engine
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════
+//  VOI MAZE v3.1 — Bug-Fixed Engine
+// ═══════════════════════════════════════════════════════
 
-// â”€â”€ FIREBASE CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FIREBASE CONFIG ────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
   apiKey: "your-api-key-here",
   authDomain: "voi-maze.firebaseapp.com",
@@ -623,7 +630,7 @@ const FIREBASE_CONFIG = {
   appId: "1:718313682039:web:edd523f376a58169d6c272"
 };
 
-// â”€â”€ AUDIO ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── AUDIO ENGINE ────────────────────────────────────────────────────
 class AudioEngine {
   constructor() {
     this.ctx = null;
@@ -650,12 +657,10 @@ class AudioEngine {
     if (!this.ctx || this.muted) return;
     if (this.bgNode) { try { this.bgNode.stop(); } catch(e){} }
 
-    // Low drone + noise ambient
     this.bgGain = this.ctx.createGain();
     this.bgGain.gain.value = 0.06;
     this.bgGain.connect(this.ctx.destination);
 
-    // Subtle noise
     const bufSize = this.ctx.sampleRate * 2;
     const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
     const data = buf.getChannelData(0);
@@ -668,7 +673,6 @@ class AudioEngine {
     src.start();
     this.bgNode = src;
 
-    // Pulsing tone
     const osc = this.ctx.createOscillator();
     const oscGain = this.ctx.createGain();
     osc.type = 'sine'; osc.frequency.value = 55;
@@ -676,7 +680,6 @@ class AudioEngine {
     osc.connect(oscGain); oscGain.connect(this.ctx.destination);
     osc.start();
 
-    // LFO on osc
     const lfo = this.ctx.createOscillator();
     const lfoGain = this.ctx.createGain();
     lfo.frequency.value = 0.15; lfoGain.gain.value = 8;
@@ -770,12 +773,12 @@ class AudioEngine {
   toggleMute() {
     this.muted = !this.muted;
     if (this.bgGain) this.bgGain.gain.value = this.muted ? 0 : 0.06;
-      document.getElementById('muteBtn').textContent = this.muted ? 'SOUND OFF' : 'SOUND ON';
+    document.getElementById('muteBtn').textContent = this.muted ? 'SOUND OFF' : 'SOUND ON';
   }
 }
 const audio = new AudioEngine();
 
-// â”€â”€ FIREBASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FIREBASE ───────────────────────────────────────────────────────
 let db = null, fbConnected = false, allLeaderboardEntries = [];
 
 async function initFirebase() {
@@ -791,10 +794,10 @@ async function initFirebase() {
     window._fbQuery = query; window._fbOrderByChild = orderByChild; window._fbLimitToLast = limitToLast;
     setFbStatus('all', 'GLOBAL LEADERBOARD ACTIVE', 'connected');
     const lbRef = query(ref(db, 'leaderboard'), orderByChild('score'), limitToLast(100));
-      onValue(lbRef, snap => {
-        const data = snap.val() || {};
-        allLeaderboardEntries = sortLeaderboard(Object.values(data));
-      });
+    onValue(lbRef, snap => {
+      const data = snap.val() || {};
+      allLeaderboardEntries = sortLeaderboard(Object.values(data));
+    });
   } catch(e) {
     console.warn('Firebase init failed:', e);
     setFbStatus('all', 'LOCAL MODE (Firebase unavailable)', 'error');
@@ -812,56 +815,56 @@ function setFbStatus(target, msg, dotState) {
   });
 }
 
-  async function saveToFirebase(entry) {
-    if (!fbConnected || !db) { saveToLocalStorage(entry); return; }
-    try {
-      await window._fbPush(window._fbRef(db, 'leaderboard'), entry);
-      setFbStatus('Finish', 'SAVED TO GLOBAL LEADERBOARD', 'connected');
-    } catch(e) {
-      saveToLocalStorage(entry);
-      setFbStatus('Finish', 'SAVED LOCALLY', 'error');
+async function saveToFirebase(entry) {
+  if (!fbConnected || !db) { saveToLocalStorage(entry); return; }
+  try {
+    await window._fbPush(window._fbRef(db, 'leaderboard'), entry);
+    setFbStatus('Finish', 'SAVED TO GLOBAL LEADERBOARD', 'connected');
+  } catch(e) {
+    saveToLocalStorage(entry);
+    setFbStatus('Finish', 'SAVED LOCALLY', 'error');
+  }
+}
+
+const LEADERBOARD_KEY = 'voi_leaderboard_v4';
+
+function normalizeEntry(e) {
+  const totalQuestions = typeof e.totalQuestions === 'number' ? e.totalQuestions : (state.questionCount || MAX_QUESTIONS_PER_GAME);
+  const totalAnswered = typeof e.totalAnswered === 'number' ? e.totalAnswered : totalQuestions;
+  const correct = typeof e.correct === 'number'
+    ? e.correct
+    : Math.round(((e.accuracy || 0) / 100) * totalAnswered);
+  const time = typeof e.time === 'number' ? e.time : 0;
+  const accuracy = totalAnswered > 0 ? Math.round((correct / totalAnswered) * 100) : 0;
+  const score = typeof e.score === 'number' ? e.score : (correct * 1000000 - time);
+  return { ...e, totalQuestions, totalAnswered, correct, accuracy, time, score };
+}
+
+function sortLeaderboard(list) {
+  return list.map(normalizeEntry).sort((a, b) => b.correct - a.correct || a.time - b.time);
+}
+
+function saveToLocalStorage(entry) {
+  const lb = sortLeaderboard([...getLocalLeaderboard(), entry]);
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(lb.slice(0,100)));
+}
+function getLocalLeaderboard() {
+  try {
+    const legacy = localStorage.getItem('voi_leaderboard_v3');
+    if (!localStorage.getItem(LEADERBOARD_KEY) && legacy) {
+      localStorage.setItem(LEADERBOARD_KEY, legacy);
     }
+    return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || [];
   }
+  catch { return []; }
+}
+function getLeaderboard(diffFilter) {
+  const src = fbConnected && allLeaderboardEntries.length ? allLeaderboardEntries : getLocalLeaderboard();
+  const filtered = diffFilter && diffFilter !== 'all' ? src.filter(e => e.difficulty === diffFilter) : src;
+  return sortLeaderboard(filtered);
+}
 
-  const LEADERBOARD_KEY = 'voi_leaderboard_v4';
-
-  function normalizeEntry(e) {
-    const totalQuestions = typeof e.totalQuestions === 'number' ? e.totalQuestions : (state.questionCount || MAX_QUESTIONS_PER_GAME);
-    const totalAnswered = typeof e.totalAnswered === 'number' ? e.totalAnswered : totalQuestions;
-    const correct = typeof e.correct === 'number'
-      ? e.correct
-      : Math.round(((e.accuracy || 0) / 100) * totalAnswered);
-    const time = typeof e.time === 'number' ? e.time : 0;
-    const accuracy = totalAnswered > 0 ? Math.round((correct / totalAnswered) * 100) : 0;
-    const score = typeof e.score === 'number' ? e.score : (correct * 1000000 - time);
-    return { ...e, totalQuestions, totalAnswered, correct, accuracy, time, score };
-  }
-
-  function sortLeaderboard(list) {
-    return list.map(normalizeEntry).sort((a, b) => b.correct - a.correct || a.time - b.time);
-  }
-
-  function saveToLocalStorage(entry) {
-    const lb = sortLeaderboard([...getLocalLeaderboard(), entry]);
-    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(lb.slice(0,100)));
-  }
-  function getLocalLeaderboard() {
-    try {
-      const legacy = localStorage.getItem('voi_leaderboard_v3');
-      if (!localStorage.getItem(LEADERBOARD_KEY) && legacy) {
-        localStorage.setItem(LEADERBOARD_KEY, legacy);
-      }
-      return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || [];
-    }
-    catch { return []; }
-  }
-  function getLeaderboard(diffFilter) {
-    const src = fbConnected && allLeaderboardEntries.length ? allLeaderboardEntries : getLocalLeaderboard();
-    const filtered = diffFilter && diffFilter !== 'all' ? src.filter(e => e.difficulty === diffFilter) : src;
-    return sortLeaderboard(filtered);
-  }
-
-// â”€â”€ QUESTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── QUESTIONS ──────────────────────────────────────────────────────
 let QUESTIONS = [], CATEGORIES = {};
 
 async function loadQuestions() {
@@ -883,56 +886,63 @@ const FALLBACK_CATEGORIES = {
   community:  { label:"Community",  color:"#ff6b35" },
 };
 const FALLBACK_QUESTIONS = [
-  { id:"q001", category:"tokenomics", difficulty:1, q:"What percentage of VOI tokens are allocated to the community?", opts:["50%","60%","75%","90%"], a:2, fact:"VOI allocates 75% of all tokens to the community â€” one of the highest community allocations in blockchain history." },
-  { id:"q002", category:"consensus",  difficulty:1, q:"What type of consensus mechanism does the Voi blockchain use?", opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"], a:1, fact:"Voi uses Proof of Stake â€” energy efficient and community-run." },
-  { id:"q003", category:"consensus",  difficulty:2, q:"How are block-proposing accounts selected in Voi's consensus?", opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"], a:2, fact:"A pseudorandom function runs on each account â€” more stake means higher selection probability." },
+  { id:"q001", category:"tokenomics", difficulty:1, q:"What percentage of VOI tokens are allocated to the community?", opts:["50%","60%","75%","90%"], a:2, fact:"VOI allocates 75% of all tokens to the community — one of the highest community allocations in blockchain history." },
+  { id:"q002", category:"consensus",  difficulty:1, q:"What type of consensus mechanism does the Voi blockchain use?", opts:["Proof of Work","Proof of Stake","Delegated PoS","Proof of Authority"], a:1, fact:"Voi uses Proof of Stake — energy efficient and community-run." },
+  { id:"q003", category:"consensus",  difficulty:2, q:"How are block-proposing accounts selected in Voi's consensus?", opts:["Round-robin","Highest staker wins","Pseudorandom function weighted by stake","Fixed validator set"], a:2, fact:"A pseudorandom function runs on each account — more stake means higher selection probability." },
   { id:"q004", category:"tokenomics", difficulty:1, q:"Voi's economic architecture spans how many years?", opts:["5","10","15","20"], a:3, fact:"20 years of carefully planned tokenomics to mitigate inflation and protect stakeholders." },
-  { id:"q005", category:"technology", difficulty:1, q:"What blockchain tech does Voi leverage for consensus?", opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"], a:1, fact:"Voi builds on Algorand's Pure PoS consensus â€” secure, fast, and decentralized." },
+  { id:"q005", category:"technology", difficulty:1, q:"What blockchain tech does Voi leverage for consensus?", opts:["Ethereum EVM","Algorand","Polkadot","Cosmos SDK"], a:1, fact:"Voi builds on Algorand's Pure PoS consensus — secure, fast, and decentralized." },
   { id:"q006", category:"technology", difficulty:2, q:"What is Voi's approximate throughput?", opts:["500 TPS","1,000 TPS","5,000 TPS","Over 10,000 TPS"], a:3, fact:"Voi exceeds 10,000 TPS with 2.8-second block finality." },
   { id:"q007", category:"technology", difficulty:1, q:"What is Voi's block time?", opts:["0.5s","2.8s","10s","30s"], a:1, fact:"2.8-second block times enable near-instant transaction finality." },
-  { id:"q008", category:"tokenomics", difficulty:2, q:"How much supply was used for private investor fundraising?", opts:["1.73%","10%","25%","40%"], a:0, fact:"Just 1.73% to private investors â€” community value is preserved." },
-  { id:"q009", category:"governance", difficulty:1, q:"Who governs Voi's ecosystem direction?", opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"], a:1, fact:"The Voi Council is elected by token holders â€” true democratic governance." },
+  { id:"q008", category:"tokenomics", difficulty:2, q:"How much supply was used for private investor fundraising?", opts:["1.73%","10%","25%","40%"], a:0, fact:"Just 1.73% to private investors — community value is preserved." },
+  { id:"q009", category:"governance", difficulty:1, q:"Who governs Voi's ecosystem direction?", opts:["VC founders","The Voi Council, elected by token holders","An appointed board","Automated contracts"], a:1, fact:"The Voi Council is elected by token holders — true democratic governance." },
   { id:"q010", category:"tokenomics", difficulty:2, q:"What portion of tokens over 5 years go to ecosystem growth?", opts:["10%","25%","50%","75%"], a:2, fact:"50% over 5 years funds ecosystem development, grants, and community initiatives." },
   { id:"q011", category:"ecosystem",  difficulty:2, q:"Which VCs back Voi Network?", opts:["a16z & Sequoia","Arrington Capital & Sonic Boom","Pantera & Multicoin","Paradigm & Coinbase"], a:1, fact:"Arrington Capital and Sonic Boom back Voi with minimal equity stake." },
   { id:"q012", category:"ecosystem",  difficulty:2, q:"Which Web3 partner supports Voi's digital identity layer?", opts:["Chainlink","Galxe","The Graph","Ceramic"], a:1, fact:"Galxe enables modular AI, digital credentials, and seamless Web3 identity on Voi." },
-  { id:"q013", category:"technology", difficulty:1, q:"What does 'Layer 1 blockchain' mean for Voi?", opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"], a:1, fact:"L1 means Voi is fully sovereign â€” its own consensus, security, and settlement." },
-  { id:"q014", category:"consensus",  difficulty:3, q:"How many steps does Voi need to write one block per round?", opts:["1","2","3","5"], a:2, fact:"Three steps: block proposal, soft vote, certify vote â€” each with different random accounts." },
-  { id:"q015", category:"community",  difficulty:1, q:"What is Voi's core mission?", opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"], a:1, fact:"Built by You, Run by You, Owned by You â€” the Voi ethos." },
+  { id:"q013", category:"technology", difficulty:1, q:"What does 'Layer 1 blockchain' mean for Voi?", opts:["Built on Ethereum","Base-level blockchain with its own consensus","A Layer 2 solution","A Bitcoin sidechain"], a:1, fact:"L1 means Voi is fully sovereign — its own consensus, security, and settlement." },
+  { id:"q014", category:"consensus",  difficulty:3, q:"How many steps does Voi need to write one block per round?", opts:["1","2","3","5"], a:2, fact:"Three steps: block proposal, soft vote, certify vote — each with different random accounts." },
+  { id:"q015", category:"community",  difficulty:1, q:"What is Voi's core mission?", opts:["Maximize investor returns","A blockchain owned, run, and built by its community","Compete with Ethereum on fees","Replace banking"], a:1, fact:"Built by You, Run by You, Owned by You — the Voi ethos." },
   { id:"q016", category:"tokenomics", difficulty:2, q:"When are Voi's early incentives fully allocated?", opts:["After 10 years","Within the first 18 months","After 5 years","Gradually over 20 years"], a:1, fact:"Front-loaded within 18 months to kickstart network growth and validator participation." },
   { id:"q017", category:"ecosystem",  difficulty:2, q:"Which platform hosted Voi's Incentivized Testnet?", opts:["Binance Launchpad","CoinList","Polkastarter","Uniswap"], a:1, fact:"CoinList hosted Voi's testnet, rewarding participants for battle-testing the network." },
-  { id:"q018", category:"governance", difficulty:2, q:"What can a Voi token holder do through governance?", opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"], a:1, fact:"Token holders elect the Council and submit proposals â€” real on-chain democratic power." },
-  { id:"q019", category:"community",  difficulty:1, q:"How many community projects launched on Voi early on?", opts:["5","15","Over 25","Over 100"], a:2, fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling â€” all community-built." },
+  { id:"q018", category:"governance", difficulty:2, q:"What can a Voi token holder do through governance?", opts:["Receive fixed dividends","Vote on network direction and investments","Guarantee price appreciation","Mine new tokens"], a:1, fact:"Token holders elect the Council and submit proposals — real on-chain democratic power." },
+  { id:"q019", category:"community",  difficulty:1, q:"How many community projects launched on Voi early on?", opts:["5","15","Over 25","Over 100"], a:2, fact:"Over 25 projects across DeFi, NFTs, gaming, and tooling — all community-built." },
   { id:"q020", category:"tokenomics", difficulty:2, q:"What's the key benefit of Voi's low private investor allocation?", opts:["Higher launch price","Community retains majority ownership and governance power","Faster dev cycles","More exchange listings"], a:1, fact:"1.73% private allocation means the community can't be outvoted or dumped on by VCs." },
-  { id:"q021", category:"governance", difficulty:3, q:"How does anyone in Voi's ecosystem receive tokens for contributing?", opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"], a:1, fact:"Anyone can submit a proposal â€” if approved, they receive tokens for delivering value." },
+  { id:"q021", category:"governance", difficulty:3, q:"How does anyone in Voi's ecosystem receive tokens for contributing?", opts:["Only through staking","Submit community-approved proposals","Purchasing on exchanges","Monthly airdrop"], a:1, fact:"Anyone can submit a proposal — if approved, they receive tokens for delivering value." },
   { id:"q022", category:"consensus",  difficulty:3, q:"What does a node broadcast alongside a proposed block in Voi?", opts:["A zero-knowledge proof","Proof the PRF selected that account","Signatures from all validators","Hash of last 10 blocks"], a:1, fact:"Nodes broadcast the block plus cryptographic PRF output proving legitimate selection." },
-  { id:"q023", category:"community",  difficulty:2, q:"How does Voi approach blockchain development philosophy?", opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"], a:1, fact:"Resources flow to contributors who add real value â€” organic growth over corporate top-down." },
+  { id:"q023", category:"community",  difficulty:2, q:"How does Voi approach blockchain development philosophy?", opts:["Move fast and break things","Community-driven innovation with real-world utility","Maximize throughput above all","Copy Ethereum's roadmap"], a:1, fact:"Resources flow to contributors who add real value — organic growth over corporate top-down." },
   { id:"q024", category:"ecosystem",  difficulty:3, q:"What specifically does Galxe enable on Voi for users?", opts:["Free transactions","Digital credentials and Web3 identity management","Unlimited NFT minting","Cross-chain bridges to Solana"], a:1, fact:"Galxe enables verifiable on-chain reputations and credentials for Voi users." },
   { id:"q025", category:"tokenomics", difficulty:3, q:"What prevents Voi's early investors from dumping tokens immediately?", opts:["No restrictions exist","Structured vesting periods","Tokens are permanently non-transferable","Community vote per transfer"], a:1, fact:"Structured vesting aligns investor incentives with long-term network success." },
 ];
 
-// â”€â”€ MAZE GENERATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const MAZE_W = 23, MAZE_H = 23, CELL = 32;
-  const MAX_QUESTIONS_PER_GAME = 25;
-  const EXIT_COLOR = '#ffb800';
+// ── MAZE GENERATION ────────────────────────────────────────────────
+const MAZE_W = 23, MAZE_H = 23, CELL = 32;
+const MAX_QUESTIONS_PER_GAME = 25;
+const EXIT_COLOR = '#ffb800';
 
+// Iterative DFS to avoid stack overflow on large mazes
 function generateMaze(w, h) {
   const visited = Array.from({length:h}, () => new Array(w).fill(false));
   const walls = Array.from({length:h}, () => Array.from({length:w}, () => ({right:true,bottom:true})));
-  function carve(x, y) {
-    visited[y][x] = true;
-    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}].sort(() => Math.random()-0.5);
-    for (const {dx,dy} of dirs) {
-      const nx=x+dx, ny=y+dy;
-      if (nx>=0&&nx<w&&ny>=0&&ny<h&&!visited[ny][nx]) {
-        if (dx===1) walls[y][x].right=false;
-        if (dx===-1) walls[y][nx].right=false;
-        if (dy===1) walls[y][x].bottom=false;
-        if (dy===-1) walls[ny][x].bottom=false;
-        carve(nx,ny);
-      }
-    }
+  const stack = [{x:0,y:0}];
+  visited[0][0] = true;
+  while (stack.length) {
+    const cur = stack[stack.length - 1];
+    const {x, y} = cur;
+    const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]
+      .filter(({dx,dy}) => {
+        const nx=x+dx, ny=y+dy;
+        return nx>=0&&nx<w&&ny>=0&&ny<h&&!visited[ny][nx];
+      })
+      .sort(() => Math.random()-0.5);
+    if (dirs.length === 0) { stack.pop(); continue; }
+    const {dx,dy} = dirs[0];
+    const nx=x+dx, ny=y+dy;
+    if (dx===1) walls[y][x].right=false;
+    if (dx===-1) walls[y][nx].right=false;
+    if (dy===1) walls[y][x].bottom=false;
+    if (dy===-1) walls[ny][x].bottom=false;
+    visited[ny][nx]=true;
+    stack.push({x:nx,y:ny});
   }
-  carve(0,0);
   return walls;
 }
 
@@ -954,29 +964,34 @@ function bfsOrder(walls) {
   return order;
 }
 
-  function placeExit(walls) {
-    const order = bfsOrder(walls);
-    return order[order.length - 1];
-  }
+function placeExit(walls) {
+  const order = bfsOrder(walls);
+  return order[order.length - 1];
+}
 
-  function placeNodes(walls, count, exitCell) {
-    const exit = exitCell || {x:-1,y:-1};
-    const order = bfsOrder(walls).filter(c => !(c.x === exit.x && c.y === exit.y));
-    const nodes = [];
-    const step = Math.max(1, Math.floor(order.length / (count + 1)));
-    for (let i=1; i<=count; i++) {
-      const cell = order[Math.min(i*step, order.length-1)];
-      nodes.push({x:cell.x, y:cell.y, answered:false, qIdx:i-1});
-    }
-    return nodes;
+function placeNodes(walls, count, exitCell) {
+  const exit = exitCell || {x:-1,y:-1};
+  const order = bfsOrder(walls).filter(c => !(c.x===exit.x && c.y===exit.y) && !(c.x===0 && c.y===0));
+  const nodes = [];
+  const usedCells = new Set();
+  const step = Math.max(1, Math.floor(order.length / (count + 1)));
+  for (let i = 1; i <= count; i++) {
+    // FIX: skip cells already used by another node to prevent overlaps
+    let idx = Math.min(i * step, order.length - 1);
+    while (usedCells.has(`${order[idx].x},${order[idx].y}`) && idx < order.length - 1) idx++;
+    const cell = order[idx];
+    usedCells.add(`${cell.x},${cell.y}`);
+    nodes.push({x:cell.x, y:cell.y, answered:false, qIdx:i-1});
   }
+  return nodes;
+}
 
-  function placePowerups(walls, nodes, exitCell) {
-    const nodeSet = new Set(nodes.map(n=>`${n.x},${n.y}`));
-    nodeSet.add('0,0');
-    if (exitCell) nodeSet.add(`${exitCell.x},${exitCell.y}`);
-    const order = bfsOrder(walls);
-    const candidates = order.filter(c => !nodeSet.has(`${c.x},${c.y}`));
+function placePowerups(walls, nodes, exitCell) {
+  const nodeSet = new Set(nodes.map(n=>`${n.x},${n.y}`));
+  nodeSet.add('0,0');
+  if (exitCell) nodeSet.add(`${exitCell.x},${exitCell.y}`);
+  const order = bfsOrder(walls);
+  const candidates = order.filter(c => !nodeSet.has(`${c.x},${c.y}`));
   const shuffled = candidates.sort(() => Math.random()-0.5);
   const types = ['freeze','hint','boost','reveal'];
   const count = { easy:6, normal:4, hard:2 }[state.difficulty] || 4;
@@ -986,7 +1001,7 @@ function bfsOrder(walls) {
   }));
 }
 
-// â”€â”€ PARTICLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PARTICLES ──────────────────────────────────────────────────────
 const particles = [];
 function spawnParticles(wx, wy, color, count=6) {
   for (let i=0; i<count; i++) {
@@ -1025,11 +1040,11 @@ function drawParticles() {
   }
 }
 
-// â”€â”€ GAME STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GAME STATE ─────────────────────────────────────────────────────
 let state = {
   screen:'start', playerName:'', difficulty:'normal',
-    maze:null, nodes:[], powerups:[], exit:null,
-    questionCount:0,
+  maze:null, nodes:[], powerups:[], exit:null,
+  questionCount:0,
   questions:[],
   player:{x:0,y:0},
   timer:0, timerInterval:null,
@@ -1046,7 +1061,7 @@ let state = {
   lastPlayerPos:{x:-1,y:-1},
 };
 
-// â”€â”€ CANVAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CANVAS ─────────────────────────────────────────────────────────
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const miniMapCanvas = document.getElementById('miniMap');
@@ -1062,12 +1077,11 @@ function resizeCanvas() {
   canvas.style.height = (dh*scale)+'px';
 }
 
-// â”€â”€ DRAWING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DRAWING ────────────────────────────────────────────────────────
 let time = 0;
-  const PU_ICONS  = { freeze:'FRZ', hint:'HINT', boost:'BOOST', reveal:'REVEAL' };
+const PU_ICONS  = { freeze:'FRZ', hint:'HINT', boost:'BOOST', reveal:'REVEAL' };
 const PU_COLORS = { freeze:'#00cfff', hint:'#ffe600', boost:'#ff6b35', reveal:'#b400ff' };
 
-// Pre-generate stone texture offsets for cells
 const stoneOffsets = {};
 function getStoneOffsets(key) {
   if (!stoneOffsets[key]) {
@@ -1086,7 +1100,6 @@ function drawMaze() {
   const vis = state.visibleCells;
   const fullReveal = state.revealed && Date.now() < state.revealEnd;
 
-  // Draw fog-of-war cells (dimly visible discovered cells)
   for (let y=0; y<MAZE_H; y++) {
     for (let x=0; x<MAZE_W; x++) {
       const key = `${x},${y}`;
@@ -1094,28 +1107,24 @@ function drawMaze() {
       if (!isVisible && !fullReveal) continue;
       const cx=x*CELL+1, cy=y*CELL+1;
 
-      // Stone floor gradient
       const grad = ctx.createLinearGradient(cx, cy, cx+CELL, cy+CELL);
       grad.addColorStop(0, isVisible ? '#0c1520' : '#060c12');
       grad.addColorStop(1, isVisible ? '#07101a' : '#030810');
       ctx.fillStyle = grad;
       ctx.fillRect(cx, cy, CELL, CELL);
 
-      // Stone texture marks
       if (isVisible) {
         const stones = getStoneOffsets(key);
         ctx.fillStyle = '#0a1825';
         for (const s of stones) ctx.fillRect(cx+s.x, cy+s.y, s.w, s.h);
       }
 
-      // Grid line subtle
       ctx.strokeStyle = isVisible ? '#0d1e2e' : '#050d14';
       ctx.lineWidth = 0.5;
       ctx.strokeRect(cx, cy, CELL, CELL);
     }
   }
 
-  // Glow for player's immediate area
   const px = state.player.x*CELL+CELL/2+1;
   const py = state.player.y*CELL+CELL/2+1;
   const lightRad = CELL * 2.5;
@@ -1125,7 +1134,6 @@ function drawMaze() {
   ctx.fillStyle = lightGrad;
   ctx.fillRect(Math.max(0,px-lightRad), Math.max(0,py-lightRad), lightRad*2, lightRad*2);
 
-  // Walls with glow
   for (let y=0; y<MAZE_H; y++) {
     for (let x=0; x<MAZE_W; x++) {
       const key = `${x},${y}`;
@@ -1140,7 +1148,7 @@ function drawMaze() {
     }
   }
 
-  // Power-ups with animated glow
+  // Power-ups
   for (const pu of state.powerups) {
     if (pu.collected) continue;
     const key=`${pu.x},${pu.y}`;
@@ -1149,7 +1157,6 @@ function drawMaze() {
     const bob = Math.sin(time*0.08+pu.x+pu.y)*3;
     const col = PU_COLORS[pu.type];
 
-    // Glow halo
     const halo = ctx.createRadialGradient(ppx, ppy+bob, 0, ppx, ppy+bob, 16);
     halo.addColorStop(0, col+'44');
     halo.addColorStop(1, 'transparent');
@@ -1171,7 +1178,6 @@ function drawMaze() {
     const nx=node.x*CELL+CELL/2+1, ny=node.y*CELL+CELL/2+1;
 
     if (node.answered) {
-      // Completed node - green check
       ctx.save();
       ctx.shadowColor = '#00ff9d'; ctx.shadowBlur = 6;
       ctx.beginPath(); ctx.arc(nx, ny, 5, 0, Math.PI*2);
@@ -1179,10 +1185,9 @@ function drawMaze() {
       ctx.restore();
     } else {
       const pulse = 0.7+0.3*Math.sin(time*0.06+node.x+node.y);
-        const col = '#7b00ff';
+      const col = '#7b00ff';
       const r = 7*pulse;
 
-      // Outer glow ring
       const glowGrad = ctx.createRadialGradient(nx, ny, 0, nx, ny, r*2.5);
       glowGrad.addColorStop(0, col+'55');
       glowGrad.addColorStop(1, 'transparent');
@@ -1193,12 +1198,10 @@ function drawMaze() {
       ctx.shadowColor = col; ctx.shadowBlur = 12*pulse;
       ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI*2);
       ctx.fillStyle = col; ctx.fill();
-      // Inner highlight
       ctx.beginPath(); ctx.arc(nx-r*0.3, ny-r*0.3, r*0.3, 0, Math.PI*2);
       ctx.fillStyle = col+'99'; ctx.fill();
       ctx.restore();
 
-      // Rotating ring
       ctx.save();
       ctx.translate(nx, ny);
       ctx.rotate(time * 0.03);
@@ -1209,30 +1212,30 @@ function drawMaze() {
       ctx.strokeStyle = col+'88'; ctx.lineWidth = 2; ctx.stroke();
       ctx.restore();
     }
+  }
 
-    // Exit portal
-    if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
-      const ex = state.exit.x*CELL+CELL/2+1, ey = state.exit.y*CELL+CELL/2+1;
-      const pulse = 0.7 + 0.3*Math.sin(time*0.08);
-      const r = 10 * pulse;
-      const glowGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, r*3);
-      glowGrad.addColorStop(0, EXIT_COLOR+'55');
-      glowGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(ex-r*3, ey-r*3, r*6, r*6);
-      ctx.save();
-      ctx.shadowColor = EXIT_COLOR; ctx.shadowBlur = 16*pulse;
-      ctx.beginPath(); ctx.arc(ex, ey, r, 0, Math.PI*2);
-      ctx.fillStyle = EXIT_COLOR; ctx.fill();
-      ctx.restore();
-      ctx.save();
-      ctx.translate(ex, ey);
-      ctx.rotate(-time * 0.04);
-      ctx.beginPath();
-      ctx.arc(0, 0, r+5, 0, Math.PI*2);
-      ctx.strokeStyle = EXIT_COLOR+'aa'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.restore();
-    }
+  // FIX: Exit portal drawn OUTSIDE the node loop — renders once, correct z-order
+  if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
+    const ex = state.exit.x*CELL+CELL/2+1, ey = state.exit.y*CELL+CELL/2+1;
+    const pulse = 0.7 + 0.3*Math.sin(time*0.08);
+    const r = 10 * pulse;
+    const glowGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, r*3);
+    glowGrad.addColorStop(0, EXIT_COLOR+'55');
+    glowGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(ex-r*3, ey-r*3, r*6, r*6);
+    ctx.save();
+    ctx.shadowColor = EXIT_COLOR; ctx.shadowBlur = 16*pulse;
+    ctx.beginPath(); ctx.arc(ex, ey, r, 0, Math.PI*2);
+    ctx.fillStyle = EXIT_COLOR; ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.translate(ex, ey);
+    ctx.rotate(-time * 0.04);
+    ctx.beginPath();
+    ctx.arc(0, 0, r+5, 0, Math.PI*2);
+    ctx.strokeStyle = EXIT_COLOR+'aa'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
   }
 
   drawParticles();
@@ -1243,10 +1246,8 @@ function drawMaze() {
 function drawWall(x1, y1, x2, y2, col='#00f5ff') {
   ctx.save();
   ctx.shadowColor = col; ctx.shadowBlur = 6;
-  // Main wall
   ctx.strokeStyle = col; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  // Inner bright line
   ctx.strokeStyle = col+'cc'; ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   ctx.restore();
@@ -1260,13 +1261,11 @@ function drawPlayer() {
 
   ctx.save();
 
-  // Shadow on floor
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.beginPath();
   ctx.ellipse(px, py+8*s+bob+4, 9*s, 3*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Glow aura
   if (state.boostActive) {
     ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 20;
   } else if (state.frozen) {
@@ -1275,61 +1274,40 @@ function drawPlayer() {
     ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 10;
   }
 
-  // Body (shirt - dark)
   ctx.fillStyle = state.boostActive ? '#4a1800' : '#1e2a3a';
   ctx.fillRect(px-5*s, py-4*s+bob, 10*s, 10*s);
-
-  // Arms
   ctx.fillStyle = '#2a3a4a';
   ctx.fillRect(px-8*s, py-3*s+bob, 3*s, 6*s);
   ctx.fillRect(px+5*s, py-3*s+bob, 3*s, 6*s);
-
-  // Hands
   ctx.fillStyle = '#c8a882';
   ctx.fillRect(px-8*s, py+2*s+bob, 3*s, 2*s);
   ctx.fillRect(px+5*s, py+2*s+bob, 3*s, 2*s);
-
-  // Legs
   ctx.fillStyle = '#333';
   ctx.fillRect(px-5*s, py+6*s+bob, 4*s, 6*s);
   ctx.fillRect(px+1*s, py+6*s+bob, 4*s, 6*s);
-
-  // Boots
   ctx.fillStyle = '#222';
   ctx.fillRect(px-6*s, py+11*s+bob, 5*s, 2*s);
   ctx.fillRect(px+1*s, py+11*s+bob, 5*s, 2*s);
-
-  // Neck
   ctx.fillStyle = '#c8a882';
   ctx.fillRect(px-2*s, py-6*s+bob, 4*s, 3*s);
-
-  // Head / face
   ctx.fillStyle = '#c8a882';
   ctx.fillRect(px-5*s, py-14*s+bob, 10*s, 10*s);
-
-  // Grey hat (brim + crown)
   ctx.fillStyle = '#888';
-  ctx.fillRect(px-7*s, py-16*s+bob, 14*s, 2*s); // brim
-  ctx.fillRect(px-4*s, py-20*s+bob, 8*s, 5*s);  // crown
-  // Hat shadow line
+  ctx.fillRect(px-7*s, py-16*s+bob, 14*s, 2*s);
+  ctx.fillRect(px-4*s, py-20*s+bob, 8*s, 5*s);
   ctx.fillStyle = '#666';
   ctx.fillRect(px-4*s, py-16*s+bob, 8*s, 1*s);
-
-  // Eyes
   ctx.fillStyle = '#111';
   ctx.fillRect(px-3*s, py-12*s+bob, 2*s, 2*s);
   ctx.fillRect(px+1*s, py-12*s+bob, 2*s, 2*s);
-
-  // Eye shine
   ctx.fillStyle = '#fff';
   ctx.fillRect(px-3*s+1, py-12*s+bob, 1, 1);
   ctx.fillRect(px+1*s+1, py-12*s+bob, 1, 1);
 
-  // Boost flame effect
   if (state.boostActive) {
     ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 30;
     ctx.font = '16px serif'; ctx.textAlign = 'center';
-    ctx.fillText('*', px, py+14*s+bob);
+    ctx.fillText('🔥', px, py+14*s+bob);
   }
 
   ctx.restore();
@@ -1367,23 +1345,22 @@ function drawMiniMap() {
     miniCtx.fillStyle = PU_COLORS[pu.type];
     miniCtx.fillRect(pu.x*cw+cw*0.2, pu.y*ch+ch*0.2, cw*0.6, ch*0.6);
   }
-    for (const node of state.nodes) {
-      if (!state.visibleCells.has(`${node.x},${node.y}`) && !fullReveal) continue;
-      miniCtx.fillStyle = node.answered ? '#00ff9d' : '#7b00ff';
-      miniCtx.fillRect(node.x*cw+cw*0.25, node.y*ch+ch*0.25, cw*0.5, ch*0.5);
-    }
-    if (state.exit && (state.visibleCells.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
-      miniCtx.fillStyle = EXIT_COLOR;
-      miniCtx.fillRect(state.exit.x*cw+cw*0.2, state.exit.y*ch+ch*0.2, cw*0.6, ch*0.6);
-    }
-  // Player dot
+  for (const node of state.nodes) {
+    if (!state.visibleCells.has(`${node.x},${node.y}`) && !fullReveal) continue;
+    miniCtx.fillStyle = node.answered ? '#00ff9d' : '#7b00ff';
+    miniCtx.fillRect(node.x*cw+cw*0.25, node.y*ch+ch*0.25, cw*0.5, ch*0.5);
+  }
+  if (state.exit && (state.visibleCells.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
+    miniCtx.fillStyle = EXIT_COLOR;
+    miniCtx.fillRect(state.exit.x*cw+cw*0.2, state.exit.y*ch+ch*0.2, cw*0.6, ch*0.6);
+  }
   miniCtx.shadowColor = '#00f5ff'; miniCtx.shadowBlur = 4;
   miniCtx.fillStyle = '#00f5ff';
   miniCtx.fillRect(state.player.x*cw+cw*0.15, state.player.y*ch+ch*0.15, cw*0.7, ch*0.7);
   miniCtx.shadowBlur = 0;
 }
 
-// â”€â”€ MOVEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── MOVEMENT ───────────────────────────────────────────────────────
 const KEY_MAP = {
   ArrowUp:{dx:0,dy:-1}, ArrowDown:{dx:0,dy:1},
   ArrowLeft:{dx:-1,dy:0}, ArrowRight:{dx:1,dy:0},
@@ -1391,7 +1368,7 @@ const KEY_MAP = {
   W:{dx:0,dy:-1}, S:{dx:0,dy:1}, A:{dx:-1,dy:0}, D:{dx:1,dy:0},
 };
 
-  function canMove(x, y, dx, dy) {
+function canMove(x, y, dx, dy) {
   const w = state.maze;
   if (dx===1)  return !w[y][x].right;
   if (dx===-1) return x>0&&!w[y][x-1].right;
@@ -1413,7 +1390,6 @@ function tryMove(dx, dy) {
       spawnParticles(nx*CELL+CELL/2+1, ny*CELL+CELL/2+1, '#ff6b35', 10);
     } else {
       audio.play('wall');
-      // Wall bump particles
       const wx = (x + (dx===1?1:0))*CELL+1, wy = (y + (dy===1?1:0))*CELL+1;
       spawnParticles(wx+CELL*0.5, wy+CELL*0.5, '#00f5ff', 4);
       return;
@@ -1421,7 +1397,6 @@ function tryMove(dx, dy) {
   }
   state.player.x = nx; state.player.y = ny;
   audio.play('step');
-  // Step particles occasionally
   if (Math.random() < 0.2) {
     spawnParticles(nx*CELL+CELL/2+1, ny*CELL+CELL/2+1, '#00f5ff33', 3);
   }
@@ -1443,29 +1418,31 @@ function checkPowerupPickup() {
   spawnParticles(x*CELL+CELL/2+1, y*CELL+CELL/2+1, PU_COLORS[pu.type], 14);
 }
 
-  function checkNode() {
-    const {x,y} = state.player;
-    const node = state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
-    if (!node) return;
-    state.activeNode = node;
-    state.questionActive = true;
-    state.activeHintEliminated = [];
-    audio.play('node');
-    showQuestion(node.qIdx);
-    updateNodeChecklist();
-  }
+function checkNode() {
+  const {x,y} = state.player;
+  const node = state.nodes.find(n=>n.x===x&&n.y===y&&!n.answered);
+  if (!node) return;
+  state.activeNode = node;
+  state.questionActive = true;
+  state.activeHintEliminated = [];
+  audio.play('node');
+  showQuestion(node.qIdx);
+  updateNodeChecklist();
+}
 
-  function checkExit() {
-    if (!state.exit || state.questionActive || state.finished) return;
-    if (state.player.x === state.exit.x && state.player.y === state.exit.y) {
-      finishGame();
-    }
+function checkExit() {
+  // FIX: only block if a question is literally being shown right now, not on a stale flag
+  if (!state.exit || state.finished) return;
+  if (state.player.x === state.exit.x && state.player.y === state.exit.y) {
+    if (state.questionActive) return; // wait until question resolves
+    finishGame();
   }
+}
 
-// â”€â”€ POWER-UPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POWER-UPS ──────────────────────────────────────────────────────
 function usePowerup(type) {
   if (state.powerupInventory[type] <= 0) { showNotif(`No ${type.toUpperCase()} charges left!`, true); return; }
-    if (type==='hint' && !state.questionActive) { showNotif('HINT only works at a question node!', true); return; }
+  if (type==='hint' && !state.questionActive) { showNotif('HINT only works at a question node!', true); return; }
 
   state.powerupInventory[type]--;
   updatePUDisplay();
@@ -1474,8 +1451,10 @@ function usePowerup(type) {
   switch(type) {
     case 'freeze':
       state.frozen = true; state.freezeEnd = Date.now()+15000;
-        showNotif('TIME FROZEN for 15 seconds!');
-        setTimeout(()=>{ state.frozen=false; showNotif('Time freeze expired'); }, 15000);
+      // FIX: update timer display class immediately so freeze animation shows without 1s delay
+      document.getElementById('hudTimer').className = 'hud-value hud-timer frozen';
+      showNotif('TIME FROZEN for 15 seconds!');
+      setTimeout(()=>{ state.frozen=false; showNotif('Time freeze expired'); }, 15000);
       break;
     case 'hint':
       if (!state.questionActive) break;
@@ -1484,15 +1463,15 @@ function usePowerup(type) {
       const toElim = wrongIdxs.sort(()=>Math.random()-0.5).slice(0,2);
       toElim.forEach(i=>state.activeHintEliminated.push(i));
       applyHintElimination(toElim);
-        showNotif('2 wrong answers eliminated!');
+      showNotif('2 wrong answers eliminated!');
       break;
     case 'boost':
       state.boostActive = true;
-        showNotif('WALL BOOST active - pass through next wall!');
+      showNotif('WALL BOOST active - pass through next wall!');
       break;
     case 'reveal':
       state.revealed = true; state.revealEnd = Date.now()+5000;
-        showNotif('FULL MAP revealed for 5 seconds!');
+      showNotif('FULL MAP revealed for 5 seconds!');
       setTimeout(()=>{ state.revealed=false; }, 5000);
       break;
   }
@@ -1528,19 +1507,19 @@ function showPUPopup(type) {
   setTimeout(()=>popup.classList.remove('show'), 2200);
 }
 
-// â”€â”€ QUESTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── QUESTIONS ──────────────────────────────────────────────────────
 const DIFF_CONFIG = {
   easy:   { penalty:5,  pool:[1,2] },
   normal: { penalty:10, pool:[1,2,3] },
   hard:   { penalty:20, pool:[2,3] },
 };
 
-  function getQuestionsForDifficulty(count) {
-    const conf = DIFF_CONFIG[state.difficulty];
-    let pool = QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
-    if (pool.length < count) pool = [...QUESTIONS];
-    return pool.sort(()=>Math.random()-0.5).slice(0, count);
-  }
+function getQuestionsForDifficulty(count) {
+  const conf = DIFF_CONFIG[state.difficulty];
+  let pool = QUESTIONS.filter(q=>conf.pool.includes(q.difficulty));
+  if (pool.length < count) pool = [...QUESTIONS];
+  return pool.sort(()=>Math.random()-0.5).slice(0, count);
+}
 
 function showQuestion(qIdx) {
   const q = state.questions[qIdx];
@@ -1551,8 +1530,8 @@ function showQuestion(qIdx) {
   const fbEl   = isMobile ? document.getElementById('qOverlayFeedback') : document.getElementById('feedbackMsg');
   const factEl = isMobile ? document.getElementById('qOverlayFact') : document.getElementById('factBox');
 
-    const total = state.questionCount || state.questions.length;
-    textEl.textContent = `[Q${qIdx+1}/${total}] ${q.q}`;
+  const total = state.questionCount || state.questions.length;
+  textEl.textContent = `[Q${qIdx+1}/${total}] ${q.q}`;
   fbEl.textContent = ''; fbEl.className = 'feedback-msg';
   factEl.textContent = ''; factEl.className = 'fact-box';
 
@@ -1568,7 +1547,6 @@ function showQuestion(qIdx) {
     btn.innerHTML = `<span class="answer-key">${keys[i]}</span><span>${opt}</span>`;
     if (state.activeHintEliminated.includes(i)) btn.classList.add('eliminated');
     btn.addEventListener('click', () => handleAnswer(i, qIdx, btn, ansEl, fbEl, factEl, isMobile));
-    // Touch: prevent double-fire
     btn.addEventListener('touchend', (e) => { e.preventDefault(); handleAnswer(i, qIdx, btn, ansEl, fbEl, factEl, isMobile); });
     ansEl.appendChild(btn);
   });
@@ -1579,7 +1557,6 @@ function showQuestion(qIdx) {
 function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
   const q = state.questions[qIdx];
   const btns = ansEl.querySelectorAll('.answer-btn');
-  // Prevent double-answer
   if (clickedBtn.disabled) return;
   btns.forEach(b => b.disabled = true);
 
@@ -1592,30 +1569,22 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
     const penalty = DIFF_CONFIG[state.difficulty].penalty;
     state.timer += penalty;
     audio.play('wrong');
-      showNotif(`INCORRECT - +${penalty}s PENALTY`, true);
-    spawnParticles(
-      state.player.x*CELL+CELL/2+1,
-      state.player.y*CELL+CELL/2+1,
-      '#ff3860', 8
-    );
+    showNotif(`INCORRECT - +${penalty}s PENALTY`, true);
+    spawnParticles(state.player.x*CELL+CELL/2+1, state.player.y*CELL+CELL/2+1, '#ff3860', 8);
   } else {
     state.correct++;
     state.streak++;
     if (state.streak > state.maxStreak) state.maxStreak = state.streak;
     audio.play('correct');
-      showNotif(state.streak>2 ? `CORRECT - ${state.streak}x STREAK!` : 'CORRECT - NODE UNLOCKED!', false);
-    spawnParticles(
-      state.player.x*CELL+CELL/2+1,
-      state.player.y*CELL+CELL/2+1,
-      '#00ff9d', 12
-    );
+    showNotif(state.streak>2 ? `CORRECT — ${state.streak}x STREAK!` : 'CORRECT — NODE UNLOCKED!', false);
+    spawnParticles(state.player.x*CELL+CELL/2+1, state.player.y*CELL+CELL/2+1, '#00ff9d', 12);
   }
 
   state.totalAnswered++;
   updateHUD();
-    fbEl.textContent = isCorrect ? 'CORRECT - PATH UNLOCKED' : 'INCORRECT - PENALTY APPLIED';
+  fbEl.textContent = isCorrect ? 'CORRECT — PATH UNLOCKED' : 'INCORRECT — PENALTY APPLIED';
   fbEl.className = 'feedback-msg ' + (isCorrect ? 'correct' : 'wrong');
-    factEl.textContent = '* ' + q.fact;
+  factEl.textContent = '★ ' + q.fact;
   factEl.className = 'fact-box show';
 
   const delay = isCorrect ? 1800 : 2500;
@@ -1628,47 +1597,49 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
     if (badgeEl) badgeEl.style.display = 'none';
     updateHUD();
     updateNodeChecklist();
+    // Re-check exit in case player was standing on it when question resolved
+    checkExit();
   }, delay);
 }
 
-// â”€â”€ NODE CHECKLIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  function buildNodeChecklist() {
-    const el = document.getElementById('nodeChecklist');
-    el.innerHTML = '';
-    for (let i=0; i<state.questionCount; i++) {
-      const div = document.createElement('div');
-      div.className = 'node-check';
-      div.id = `nodeCheck${i}`;
+// ── NODE CHECKLIST ─────────────────────────────────────────────────
+function buildNodeChecklist() {
+  const el = document.getElementById('nodeChecklist');
+  el.innerHTML = '';
+  for (let i=0; i<state.questionCount; i++) {
+    const div = document.createElement('div');
+    div.className = 'node-check';
+    div.id = `nodeCheck${i}`;
     div.textContent = i+1;
     el.appendChild(div);
   }
 }
 
-  function updateNodeChecklist() {
-    for (let i=0; i<state.questionCount; i++) {
-      const el = document.getElementById(`nodeCheck${i}`);
-      if (!el) continue;
-      const node = state.nodes[i];
-      if (!node) continue;
-      if (node.answered) el.className = 'node-check done';
-      else if (state.activeNode && state.activeNode.qIdx === i) el.className = 'node-check active';
-      else el.className = 'node-check';
-    }
+function updateNodeChecklist() {
+  for (let i=0; i<state.questionCount; i++) {
+    const el = document.getElementById(`nodeCheck${i}`);
+    if (!el) continue;
+    const node = state.nodes[i];
+    if (!node) continue;
+    if (node.answered) el.className = 'node-check done';
+    else if (state.activeNode && state.activeNode.qIdx === i) el.className = 'node-check active';
+    else el.className = 'node-check';
+  }
 }
 
-// â”€â”€ HUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  function updateHUD() {
-    const answered = state.nodes.filter(n=>n.answered).length;
-    const total = state.questionCount || state.nodes.length || 1;
-    document.getElementById('hudQCount').textContent = answered;
-    const totalEl = document.getElementById('hudQTotal');
-    if (totalEl) totalEl.textContent = total;
-    document.getElementById('hudProgress').style.width = (answered/total*100)+'%';
-    const acc = state.totalAnswered>0 ? Math.round(state.correct/state.totalAnswered*100)+'%' : '--';
-    document.getElementById('hudAccuracy').textContent = acc;
-    document.getElementById('hudStreak').textContent = state.streak;
-    updatePUDisplay();
-  }
+// ── HUD ────────────────────────────────────────────────────────────
+function updateHUD() {
+  const answered = state.nodes.filter(n=>n.answered).length;
+  const total = state.questionCount || state.nodes.length || 1;
+  document.getElementById('hudQCount').textContent = answered;
+  const totalEl = document.getElementById('hudQTotal');
+  if (totalEl) totalEl.textContent = total;
+  document.getElementById('hudProgress').style.width = (answered/total*100)+'%';
+  const acc = state.totalAnswered>0 ? Math.round(state.correct/state.totalAnswered*100)+'%' : '--';
+  document.getElementById('hudAccuracy').textContent = acc;
+  document.getElementById('hudStreak').textContent = state.streak;
+  updatePUDisplay();
+}
 
 function formatTime(secs) {
   const m = Math.floor(secs/60).toString().padStart(2,'0');
@@ -1682,13 +1653,14 @@ function startTimer() {
     state.timer++;
     const el = document.getElementById('hudTimer');
     el.textContent = formatTime(state.timer);
-    if (state.frozen) el.className = 'hud-value hud-timer frozen';
-    else if (state.timer > 300) el.className = 'hud-value hud-timer urgent';
-    else el.className = 'hud-value hud-timer';
+    // Class is set immediately on freeze activation; here we only handle unfreeze/urgent
+    if (!state.frozen) {
+      el.className = state.timer > 300 ? 'hud-value hud-timer urgent' : 'hud-value hud-timer';
+    }
   }, 1000);
 }
 
-// â”€â”€ NOTIFICATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── NOTIFICATION ───────────────────────────────────────────────────
 let notifTimeout;
 function showNotif(msg, isWrong=false) {
   const el = document.getElementById('notif');
@@ -1698,7 +1670,7 @@ function showNotif(msg, isWrong=false) {
   notifTimeout = setTimeout(() => el.className='notif', 2200);
 }
 
-// â”€â”€ GAME LOOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GAME LOOP ──────────────────────────────────────────────────────
 function gameLoop() {
   time++;
   const now = Date.now();
@@ -1712,19 +1684,18 @@ function gameLoop() {
   state.animFrame = requestAnimationFrame(gameLoop);
 }
 
-// â”€â”€ INIT GAME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  async function initGame(name, difficulty) {
-  // Init audio on first user interaction
+// ── INIT GAME ──────────────────────────────────────────────────────
+async function initGame(name, difficulty) {
   audio.init(); audio.resume();
 
-    state.playerName = name;
-    state.difficulty = difficulty;
-    state.maze = generateMaze(MAZE_W, MAZE_H);
-    state.questionCount = Math.min(MAX_QUESTIONS_PER_GAME, QUESTIONS.length);
-    state.questions = getQuestionsForDifficulty(state.questionCount);
-    state.exit = placeExit(state.maze);
-    state.nodes = placeNodes(state.maze, state.questionCount, state.exit);
-    state.powerups = placePowerups(state.maze, state.nodes, state.exit);
+  state.playerName = name;
+  state.difficulty = difficulty;
+  state.maze = generateMaze(MAZE_W, MAZE_H);
+  state.questionCount = Math.min(MAX_QUESTIONS_PER_GAME, QUESTIONS.length);
+  state.questions = getQuestionsForDifficulty(state.questionCount);
+  state.exit = placeExit(state.maze);
+  state.nodes = placeNodes(state.maze, state.questionCount, state.exit);
+  state.powerups = placePowerups(state.maze, state.nodes, state.exit);
   state.player = {x:0,y:0};
   state.timer=0; state.correct=0; state.wrong=0; state.totalAnswered=0;
   state.streak=0; state.maxStreak=0;
@@ -1751,13 +1722,12 @@ function gameLoop() {
   if (state.animFrame) cancelAnimationFrame(state.animFrame);
   gameLoop();
 
-  // Show mute button and D-pad
   document.getElementById('muteBtn').classList.add('show');
   if ('ontouchstart' in window || window.innerWidth <= 720) {
     document.getElementById('dpad').classList.add('show');
   }
 
-    document.getElementById('questionText').textContent = 'Find question nodes, answer them, then reach the exit to win.';
+  document.getElementById('questionText').textContent = 'Find question nodes, answer them, then reach the exit to win.';
   document.getElementById('answersContainer').innerHTML = '';
   document.getElementById('feedbackMsg').textContent = '';
   document.getElementById('factBox').className = 'fact-box';
@@ -1765,7 +1735,7 @@ function gameLoop() {
   updateHUD();
 }
 
-// â”€â”€ FINISH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FINISH ─────────────────────────────────────────────────────────
 async function finishGame() {
   if (state.finished) return;
   state.finished = true;
@@ -1773,7 +1743,6 @@ async function finishGame() {
   cancelAnimationFrame(state.animFrame);
   audio.play('escape');
 
-  // Celebration particles
   for (let i=0; i<30; i++) {
     const cols = ['#00f5ff','#7b00ff','#00ff9d','#ffb800','#ff006e'];
     spawnParticles(
@@ -1782,35 +1751,35 @@ async function finishGame() {
     );
   }
 
-    const totalAnswered = state.totalAnswered;
-    const acc = totalAnswered > 0 ? Math.round(state.correct / totalAnswered * 100) : 0;
-    const score = state.correct * 1000000 - state.timer;
-    const entry = {
-      name: state.playerName,
-      time: state.timer,
-      accuracy: acc,
-      correct: state.correct,
-      totalAnswered,
-      totalQuestions: state.questionCount,
-      streak: state.maxStreak,
-      difficulty: state.difficulty,
-      score,
-      date: Date.now(),
-    };
+  const totalAnswered = state.totalAnswered;
+  const acc = totalAnswered > 0 ? Math.round(state.correct / totalAnswered * 100) : 0;
+  const score = state.correct * 1000000 - state.timer;
+  const entry = {
+    name: state.playerName,
+    time: state.timer,
+    accuracy: acc,
+    correct: state.correct,
+    totalAnswered,
+    totalQuestions: state.questionCount,
+    streak: state.maxStreak,
+    difficulty: state.difficulty,
+    score,
+    date: Date.now(),
+  };
 
   document.getElementById('finishTitle').textContent = acc >= 90 ? 'MASTERY ESCAPED!' : acc >= 70 ? 'ESCAPED!' : 'BARELY ESCAPED!';
   document.getElementById('finishTime').textContent = formatTime(state.timer);
-    document.getElementById('finishAccuracy').textContent = `${state.correct}/${state.questionCount}`;
+  document.getElementById('finishAccuracy').textContent = `${state.correct}/${state.questionCount}`;
   document.getElementById('finishStreak').textContent = state.maxStreak+'x';
   showScreen('finish');
   setFbStatus('Finish', 'SAVING...', 'loading');
 
   await saveToFirebase(entry);
-    const lb = getLeaderboard('all');
-    const rank = lb.findIndex(e => {
-      const n = normalizeEntry(e);
-      return n.name === entry.name && n.correct === entry.correct && n.time === entry.time;
-    }) + 1 || lb.length;
+  const lb = getLeaderboard('all');
+  const rank = lb.findIndex(e => {
+    const n = normalizeEntry(e);
+    return n.name === entry.name && n.correct === entry.correct && n.time === entry.time;
+  }) + 1 || lb.length;
   document.getElementById('finishRank').textContent = '#'+(rank||'?');
   renderLeaderboard('lbBody', lb, entry);
 
@@ -1818,7 +1787,7 @@ async function finishGame() {
   document.getElementById('dpad').classList.remove('show');
 }
 
-// â”€â”€ LEADERBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── LEADERBOARD ────────────────────────────────────────────────────
 function renderLeaderboard(elId, lb, highlight) {
   const el = document.getElementById(elId);
   if (!lb||!lb.length) {
@@ -1831,7 +1800,7 @@ function renderLeaderboard(elId, lb, highlight) {
     const entry = normalizeEntry(e);
     const isHL = highlight && entry.name===highlight.name && Math.abs(entry.time-highlight.time)<2;
     return `<div class="lb-row ${isHL?'highlight-new':''}">
-      <span class="${rankClass(i)}">${i===0?'1':i===1?'2':i===2?'3':i+1}</span>
+      <span class="${rankClass(i)}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span>
       <span class="lb-name">${escapeHtml(entry.name||'ANON')}</span>
       <span class="lb-time">${formatTime(entry.time||0)}</span>
       <span class="lb-score">${entry.correct}/${entry.totalQuestions}</span>
@@ -1844,7 +1813,7 @@ function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// â”€â”€ SCREENS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SCREENS ────────────────────────────────────────────────────────
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   const el = document.getElementById(name+'Screen');
@@ -1852,14 +1821,13 @@ function showScreen(name) {
   state.screen = name;
 }
 
-// â”€â”€ CHARACTER PREVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── CHARACTER PREVIEW ──────────────────────────────────────────────
 function drawCharPreview() {
   const c = document.getElementById('charPreview');
   const ctx2 = c.getContext('2d');
   ctx2.clearRect(0,0,c.width,c.height);
   const s=2, px=c.width/2, py=c.height/2+5;
 
-  // Shadow
   ctx2.fillStyle='rgba(0,0,0,0.3)';
   ctx2.beginPath(); ctx2.ellipse(px,py+20,12,4,0,0,Math.PI*2); ctx2.fill();
 
@@ -1878,7 +1846,7 @@ function drawCharPreview() {
   ctx2.fillRect(px+2*s,py-14*s,2*s,2*s);
 }
 
-// â”€â”€ TOUCH / SWIPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── TOUCH / SWIPE ──────────────────────────────────────────────────
 let touchStart = null;
 canvas.addEventListener('touchstart', e => {
   touchStart = {x:e.touches[0].clientX, y:e.touches[0].clientY};
@@ -1894,7 +1862,6 @@ canvas.addEventListener('touchend', e => {
   touchStart = null; e.preventDefault();
 }, {passive:false});
 
-// D-pad buttons (touch + click)
 function setupDpadBtn(id, dx, dy) {
   const btn = document.getElementById(id);
   if (!btn) return;
@@ -1906,7 +1873,7 @@ setupDpadBtn('dDown', 0,1);
 setupDpadBtn('dLeft', -1,0);
 setupDpadBtn('dRight', 1,0);
 
-// â”€â”€ KEYBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── KEYBOARD ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key in KEY_MAP) {
     state.keys[e.key] = true;
@@ -1921,7 +1888,7 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => { state.keys[e.key]=false; });
 
-// â”€â”€ DIFFICULTY BUTTONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DIFFICULTY BUTTONS ─────────────────────────────────────────────
 document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const d = btn.dataset.diff;
@@ -1931,7 +1898,7 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
   });
 });
 
-// â”€â”€ POWER-UP BUTTON BINDINGS (with touch support) â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POWER-UP BUTTON BINDINGS ───────────────────────────────────────
 ['freeze','hint','boost','reveal'].forEach(type => {
   const cap = type.charAt(0).toUpperCase()+type.slice(1);
   const btn = document.getElementById('pu'+cap);
@@ -1940,7 +1907,7 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('touchend', e => { e.preventDefault(); usePowerup(type); });
 });
 
-// â”€â”€ UI BINDINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── UI BINDINGS ────────────────────────────────────────────────────
 document.getElementById('startBtn').addEventListener('click', async () => {
   const name = document.getElementById('playerName').value.trim() || 'ANON';
   await initGame(name, state.difficulty);
@@ -1985,7 +1952,7 @@ document.getElementById('muteBtn').addEventListener('click', () => audio.toggleM
 
 window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas(); });
 
-// â”€â”€ BOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── BOOT ───────────────────────────────────────────────────────────
 (async () => {
   drawCharPreview();
   showScreen('start');
@@ -1995,10 +1962,4 @@ window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
+```
