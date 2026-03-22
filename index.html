@@ -210,7 +210,7 @@
     flex-direction: row; align-items: stretch; justify-content: flex-start;
     background: transparent; padding: 0;
   }
-  #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; }
+  #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; cursor: crosshair; }
 
   /* â”€â”€â”€ HUD â”€â”€â”€ */
   .hud {
@@ -415,7 +415,43 @@
   }
   .notif.show { opacity: 1; }
   .notif.wrong-notif { border-color: var(--wrong); color: var(--wrong); box-shadow: 0 0 12px #ff386088; }
-  .notif.pu-notif { border-color: var(--warn); color: var(--warn); box-shadow: 0 0 12px #ffb80088; }
+  .notif.pu-notif    { border-color: var(--warn);  color: var(--warn);  box-shadow: 0 0 12px #ffb80088; }
+
+  /* Combat HUD — hearts + weapon */
+  .combat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 6px; flex-wrap: wrap;
+  }
+  .hearts-row { display: flex; gap: 4px; }
+  .heart {
+    font-size: 18px; line-height: 1;
+    transition: transform 0.15s;
+    filter: drop-shadow(0 0 4px #ff006e88);
+  }
+  .heart.empty { opacity: 0.2; filter: none; }
+  .heart.hit { transform: scale(1.4); }
+  .weapon-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    background: #0a1520; border: 1px solid var(--warn); color: var(--warn);
+    padding: 3px 8px; letter-spacing: 0.1em;
+  }
+  .bomb-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    background: #0a1520; border: 1px solid #ff6b35; color: #ff6b35;
+    padding: 3px 8px; letter-spacing: 0.1em;
+  }
+  .kills-chip {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    background: #0a1520; border: 1px solid var(--accent2); color: var(--accent2);
+    padding: 3px 8px; letter-spacing: 0.1em;
+  }
+  /* Flash overlay when player takes damage */
+  #damageFlash {
+    position: fixed; inset: 0; pointer-events: none;
+    background: rgba(255,0,80,0); z-index: 950;
+    transition: background 0.08s;
+  }
+  #damageFlash.flash { background: rgba(255,0,80,0.28); }
 
   #miniMap { width: 100%; height: 90px; border: 1px solid var(--border); background: #05080f; }
 
@@ -592,8 +628,22 @@
         <div class="hud-value" id="hudStreak" style="font-size:18px;color:var(--warn);">0</div>
       </div>
     </div>
+    <!-- Combat HUD -->
     <div>
-      <div class="hud-label">POWER-UPS <span style="color:var(--dim);font-size:9px;">[1] [2] [3] [4]</span></div>
+      <div class="hud-label">HEALTH</div>
+      <div class="hearts-row" id="heartsRow">
+        <span class="heart" id="heart0">&#10084;</span>
+        <span class="heart" id="heart1">&#10084;</span>
+        <span class="heart" id="heart2">&#10084;</span>
+      </div>
+    </div>
+    <div class="combat-row">
+      <div class="weapon-chip" id="weaponChip">&#x2694; SWORD</div>
+      <div class="bomb-chip" id="bombChip">&#x1F4A3; x0</div>
+      <div class="kills-chip" id="killsChip">&#x2620; 0 KILLS</div>
+    </div>
+    <div>
+      <div class="hud-label">POWER-UPS <span style="color:var(--dim);font-size:9px;">[1][2][3][4] [B]=BOMB [F]=ATTACK</span></div>
       <div class="powerups-row" id="powerupsRow">
           <button class="pu-chip pu-freeze" id="puFreeze" title="TIME FREEZE [1]">FRZ <span class="pu-count" id="puFreezeCount">0</span></button>
           <button class="pu-chip pu-hint" id="puHint" title="HINT [2]">HINT <span class="pu-count" id="puHintCount">0</span></button>
@@ -698,14 +748,23 @@
 <!-- D-PAD for mobile -->
 <div id="dpad">
   <div></div>
-    <button class="dpad-btn" id="dUp" style="grid-column:2;grid-row:1;">^</button>
+  <button class="dpad-btn" id="dUp"    style="grid-column:2;grid-row:1;">▲</button>
   <div></div>
-    <button class="dpad-btn" id="dLeft" style="grid-column:1;grid-row:2;"><</button>
+  <button class="dpad-btn" id="dLeft"  style="grid-column:1;grid-row:2;">◀</button>
   <div style="grid-column:2;grid-row:2;"></div>
-    <button class="dpad-btn" id="dRight" style="grid-column:3;grid-row:2;">></button>
+  <button class="dpad-btn" id="dRight" style="grid-column:3;grid-row:2;">▶</button>
   <div></div>
-    <button class="dpad-btn" id="dDown" style="grid-column:2;grid-row:3;">v</button>
+  <button class="dpad-btn" id="dDown"  style="grid-column:2;grid-row:3;">▼</button>
   <div></div>
+</div>
+<!-- Combat buttons for mobile -->
+<div id="combatBtns" style="position:fixed;bottom:16px;left:16px;display:none;gap:8px;z-index:200;">
+  <button class="dpad-btn" id="attackBtn"
+    style="width:56px;height:56px;font-size:22px;border-color:#ffb800;color:#ffb800;"
+    title="Attack [F]">⚔</button>
+  <button class="dpad-btn" id="bombBtn"
+    style="width:56px;height:56px;font-size:22px;border-color:#ff6b35;color:#ff6b35;"
+    title="Bomb [B]">💣</button>
 </div>
 
 <!-- Partner buttons during gameplay (bottom-left) -->
@@ -720,6 +779,7 @@
   </a>
 </div>
 
+<div id="damageFlash"></div>
 <div class="notif" id="notif"></div>
 
 <script>
@@ -1282,6 +1342,17 @@ let state = {
   revealed:false, revealEnd:0,
   activeHintEliminated:[],
   lastPlayerPos:{x:-1,y:-1},
+  // Combat
+  hearts: 3,
+  invincible: false, invincibleEnd: 0,
+  weapon: 'sword',    // 'sword' | 'power_sword'
+  swordHits: 3,       // hits left to kill current target (base sword=3, power_sword=1)
+  bombs: 0,
+  kills: 0,
+  enemies: [],
+  weaponPickups: [],  // {x,y,type,collected}
+  attackAnim: 0,      // frames remaining for attack flash
+  lastEnemyTick: 0,
 };
 
 // â”€â”€ CANVAS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1669,6 +1740,7 @@ function tryMove(dx, dy) {
   }
   updateVisibility();
   checkPowerupPickup();
+  checkWeaponPickup();
   checkNode();
   checkExit();
 }
@@ -1941,6 +2013,325 @@ function showNotif(msg, isWrong=false) {
 }
 
 // â”€â”€ GAME LOOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// ── COMBAT SYSTEM ────────────────────────────────────────────────
+
+const ENEMY_COUNT = { easy:2, normal:5, hard:10 };
+
+function placeEnemies(walls, nodes, exitCell, count) {
+  const blocked = new Set(nodes.map(n=>`${n.x},${n.y}`));
+  blocked.add('0,0');
+  if (exitCell) blocked.add(`${exitCell.x},${exitCell.y}`);
+  const order = bfsOrder(walls);
+  const start = Math.floor(order.length * 0.3);
+  const candidates = order.slice(start).filter(c => !blocked.has(`${c.x},${c.y}`));
+  const shuffled = candidates.sort(() => Math.random()-0.5);
+  return shuffled.slice(0, count).map((c, i) => ({
+    id: i, x: c.x, y: c.y, dead: false,
+    hits: 0, hitsNeeded: 3, chasing: false,
+    blinkEnd: 0, deathAnim: 0,
+  }));
+}
+
+function placeWeaponPickups(walls, nodes, enemies, exitCell) {
+  const blocked = new Set([
+    ...nodes.map(n=>`${n.x},${n.y}`),
+    ...enemies.map(e=>`${e.x},${e.y}`),
+    '0,0',
+  ]);
+  if (exitCell) blocked.add(`${exitCell.x},${exitCell.y}`);
+  const candidates = bfsOrder(walls)
+    .filter(c => !blocked.has(`${c.x},${c.y}`))
+    .sort(() => Math.random()-0.5);
+  const pickups = [];
+  ['power_sword','bomb','bomb'].forEach((type, i) => {
+    if (candidates[i]) pickups.push({ x:candidates[i].x, y:candidates[i].y, type, collected:false });
+  });
+  return pickups;
+}
+
+function bfsPath(walls, sx, sy, tx, ty) {
+  if (sx===tx && sy===ty) return null;
+  const vis = Array.from({length:MAZE_H}, ()=>new Array(MAZE_W).fill(false));
+  const par = Array.from({length:MAZE_H}, ()=>new Array(MAZE_W).fill(null));
+  const q = [{x:sx,y:sy}]; vis[sy][sx]=true;
+  while (q.length) {
+    const {x,y} = q.shift();
+    if (x===tx && y===ty) {
+      let cx=tx, cy=ty;
+      while (par[cy][cx] && !(par[cy][cx].x===sx && par[cy][cx].y===sy)) {
+        const p=par[cy][cx]; cx=p.x; cy=p.y;
+      }
+      return {x:cx, y:cy};
+    }
+    const w=walls[y][x];
+    [{nx:x+1,ny:y,ok:!w.right},{nx:x-1,ny:y,ok:x>0&&!walls[y][x-1].right},
+     {nx:x,ny:y+1,ok:!w.bottom},{nx:x,ny:y-1,ok:y>0&&!walls[y-1][x].bottom}]
+    .forEach(({nx,ny,ok})=>{
+      if(ok&&nx>=0&&nx<MAZE_W&&ny>=0&&ny<MAZE_H&&!vis[ny][nx]){
+        vis[ny][nx]=true; par[ny][nx]={x,y}; q.push({x:nx,y:ny});
+      }
+    });
+  }
+  return null;
+}
+
+function updateEnemies() {
+  if (state.questionActive || state.finished) return;
+  const now = Date.now();
+  const tickMs = {easy:500,normal:350,hard:220}[state.difficulty]||350;
+  if (now - state.lastEnemyTick < tickMs) return;
+  state.lastEnemyTick = now;
+  const px=state.player.x, py=state.player.y;
+  for (const e of state.enemies) {
+    if (e.dead) continue;
+    const visionRange = {easy:4,normal:6,hard:8}[state.difficulty]||6;
+    const dist = Math.abs(e.x-px)+Math.abs(e.y-py);
+    e.chasing = dist <= visionRange;
+    if (e.chasing) {
+      const step = bfsPath(state.maze, e.x, e.y, px, py);
+      if (step && !(step.x===e.x && step.y===e.y)) { e.x=step.x; e.y=step.y; }
+    } else {
+      const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]
+        .filter(({dx,dy}) => canMove(e.x,e.y,dx,dy));
+      if (dirs.length) { const d=dirs[Math.floor(Math.random()*dirs.length)]; e.x+=d.dx; e.y+=d.dy; }
+    }
+    if (e.x===px && e.y===py) damagePlayer();
+  }
+}
+
+function damagePlayer() {
+  if (state.invincible) return;
+  state.hearts = Math.max(0, state.hearts-1);
+  state.invincible = true;
+  state.invincibleEnd = Date.now()+1800;
+  updateCombatHUD();
+  const h = document.getElementById(`heart${state.hearts}`);
+  if (h) { h.classList.add('hit'); setTimeout(()=>h.classList.remove('hit'),300); }
+  const df = document.getElementById('damageFlash');
+  if (df) { df.classList.add('flash'); setTimeout(()=>df.classList.remove('flash'),200); }
+  audio.play('wrong');
+  spawnParticles(state.player.x*CELL+CELL/2+1, state.player.y*CELL+CELL/2+1, '#ff006e', 10);
+  setTimeout(()=>{ state.invincible=false; }, 1800);
+  if (state.hearts<=0) playerDied();
+}
+
+function playerDied() {
+  if (state.finished) return;
+  state.finished=true;
+  clearInterval(state.timerInterval);
+  cancelAnimationFrame(state.animFrame);
+  audio.play('wrong');
+  showNotif('ELIMINATED! GAME OVER', true);
+  setTimeout(()=>{
+    const acc = state.totalAnswered>0?Math.round(state.correct/state.totalAnswered*100):0;
+    const entry = {
+      name:state.playerName, time:state.timer, accuracy:acc,
+      correct:state.correct, totalAnswered:state.totalAnswered,
+      totalQuestions:state.questionCount, streak:state.maxStreak,
+      difficulty:state.difficulty, kills:state.kills,
+      score: state.kills*500 + state.correct*1000 - state.timer,
+      date:Date.now(), died:true,
+    };
+    document.getElementById('finishTitle').textContent = 'ELIMINATED!';
+    document.getElementById('finishTime').textContent = formatTime(state.timer);
+    document.getElementById('finishAccuracy').textContent = `${state.correct}/${state.questionCount}`;
+    document.getElementById('finishStreak').textContent = state.maxStreak+'x';
+    showScreen('finish');
+    setFbStatus('Finish','SAVING...','loading');
+    saveToFirebase(entry).then(()=>{
+      const lb=getLeaderboard('all');
+      const rank=lb.findIndex(e2=>{const n=normalizeEntry(e2);return n.name===entry.name&&n.time===entry.time;})+1||lb.length;
+      document.getElementById('finishRank').textContent='#'+(rank||'?');
+      renderLeaderboard('lbBody',lb,entry);
+    });
+    document.getElementById('muteBtn').classList.remove('show');
+    document.getElementById('dpad').classList.remove('show');
+    const cb2=document.getElementById('combatBtns'); if(cb2)cb2.style.display='none';
+  },1200);
+}
+
+function attackWithSword(dirX, dirY) {
+  // dirX/dirY: optional direction of attack (-1/0/1).
+  // If omitted, hits enemies in ALL adjacent cells (radius 1.5).
+  if (state.finished || state.questionActive) return;
+  state.attackAnim = 10;
+  const px = state.player.x, py = state.player.y;
+  const needed = state.weapon === 'power_sword' ? 1 : 3;
+  let hitAny = false;
+
+  for (const e of state.enemies) {
+    if (e.dead) continue;
+    const dx = e.x - px, dy = e.y - py;
+    const dist = Math.abs(dx) + Math.abs(dy);
+
+    // Directional attack: only hit enemies roughly in that direction
+    if (dirX !== undefined && dirY !== undefined) {
+      // Allow ±1 cell in target direction, plus the diagonal slice
+      const inDir = (dirX !== 0 && Math.sign(dx) === dirX && Math.abs(dy) <= 1 && Math.abs(dx) <= 2)
+                 || (dirY !== 0 && Math.sign(dy) === dirY && Math.abs(dx) <= 1 && Math.abs(dy) <= 2)
+                 || dist === 0; // same cell always counts
+      if (!inDir) continue;
+    } else {
+      // No direction given — hit everything within 1.5 cells
+      if (dist > 1.5 && dist > 1) continue;
+      // Accept manhattan <=1 (adjacent/same) always
+      if (dist > 1) continue;
+    }
+
+    // Apply hit
+    e.hits++;
+    e.blinkEnd = Date.now() + 350;
+    spawnParticles(e.x*CELL+CELL/2+1, e.y*CELL+CELL/2+1, '#ff6b35', 8);
+    audio.play('powerup');
+
+    if (e.hits >= needed) {
+      killEnemy(e);
+      hitAny = true;
+    } else {
+      hitAny = true;
+      showNotif(`HIT! ${needed - e.hits} more hit${needed-e.hits>1?'s':''} to kill`);
+    }
+  }
+
+  if (!hitAny) {
+    // Swing miss sound
+    audio.play('wall');
+  }
+}
+
+function dropBomb() {
+  if (state.bombs<=0){showNotif('No bombs!',true);return;}
+  if (state.finished||state.questionActive) return;
+  state.bombs--; updateCombatHUD();
+  const px=state.player.x,py=state.player.y;
+  spawnParticles(px*CELL+CELL/2+1,py*CELL+CELL/2+1,'#ffb800',20);
+  let killed=0;
+  for (const e of state.enemies) {
+    if (!e.dead&&Math.abs(e.x-px)<=2&&Math.abs(e.y-py)<=2){killEnemy(e);killed++;}
+  }
+  audio.play('escape');
+  showNotif(killed>0?`BOMB! ${killed} ENEMY${killed>1?'S':''} DESTROYED!`:'BOMB DROPPED!');
+}
+
+function killEnemy(e) {
+  e.dead=true; e.deathAnim=12; state.kills++; updateCombatHUD();
+  spawnParticles(e.x*CELL+CELL/2+1,e.y*CELL+CELL/2+1,'#ff006e',16);
+  audio.play('correct');
+  showNotif(`ENEMY DOWN! +500 pts`);
+}
+
+function checkWeaponPickup() {
+  const {x,y}=state.player;
+  for (const wp of state.weaponPickups) {
+    if (wp.collected||wp.x!==x||wp.y!==y) continue;
+    wp.collected=true;
+    if (wp.type==='power_sword'){state.weapon='power_sword';showNotif('POWER SWORD — 1-HIT KILL!');audio.play('powerup');}
+    else if (wp.type==='bomb'){state.bombs++;showNotif('BOMB ACQUIRED! [B] to use');audio.play('powerup');}
+    updateCombatHUD();
+    spawnParticles(x*CELL+CELL/2+1,y*CELL+CELL/2+1,'#ffb800',14);
+  }
+}
+
+function updateCombatHUD() {
+  for (let i=0;i<3;i++){const h=document.getElementById(`heart${i}`);if(h)h.classList.toggle('empty',i>=state.hearts);}
+  const wc=document.getElementById('weaponChip');
+  if(wc){wc.textContent=state.weapon==='power_sword'?'PWR SWORD':'SWORD';wc.style.borderColor=state.weapon==='power_sword'?'#00f5ff':'var(--warn)';wc.style.color=state.weapon==='power_sword'?'#00f5ff':'var(--warn)';}
+  const bc=document.getElementById('bombChip'); if(bc)bc.textContent=`BOMB x${state.bombs}`;
+  const kc=document.getElementById('killsChip'); if(kc)kc.textContent=`${state.kills} KILL${state.kills!==1?'S':''}`;
+}
+
+function drawEnemies() {
+  const vis=state.visibleCells;
+  const fullReveal=state.revealed&&Date.now()<state.revealEnd;
+  const now=Date.now();
+  for (const e of state.enemies) {
+    if (!vis.has(`${e.x},${e.y}`)&&!fullReveal) continue;
+    const ex=e.x*CELL+CELL/2+1, ey=e.y*CELL+CELL/2+1;
+    if (e.dead) {
+      if (e.deathAnim>0){e.deathAnim--;ctx.save();ctx.globalAlpha=e.deathAnim/12;ctx.strokeStyle='#ff006e';ctx.lineWidth=3;ctx.shadowColor='#ff006e';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(ex,ey,(12-e.deathAnim)*3,0,Math.PI*2);ctx.stroke();ctx.restore();}
+      continue;
+    }
+    const isBlinking=now<e.blinkEnd;
+    const pulse=0.85+0.15*Math.sin(time*0.12+e.id);
+    const s=1.3*pulse;
+    ctx.save();
+    ctx.shadowColor=e.chasing?'#ff006e':'#ff6b35'; ctx.shadowBlur=e.chasing?14:6;
+    const bodyCol=isBlinking?'#ffffff':(e.chasing?'#cc1133':'#992211');
+    // Torso
+    ctx.fillStyle=bodyCol; ctx.fillRect(ex-4*s,ey-4*s,8*s,9*s);
+    // Head
+    ctx.fillStyle=isBlinking?'#ffffff':'#dd2244'; ctx.fillRect(ex-4*s,ey-12*s,8*s,8*s);
+    // Eyes
+    ctx.fillStyle=isBlinking?'#ff0000':'#ffff00';
+    ctx.fillRect(ex-3*s,ey-10*s,2*s,2*s); ctx.fillRect(ex+1*s,ey-10*s,2*s,2*s);
+    // Arms
+    ctx.fillStyle=bodyCol;
+    ctx.fillRect(ex-7*s,ey-3*s,3*s,5*s); ctx.fillRect(ex+4*s,ey-3*s,3*s,5*s);
+    // Legs
+    ctx.fillRect(ex-4*s,ey+5*s,3*s,5*s); ctx.fillRect(ex+1*s,ey+5*s,3*s,5*s);
+    // HP pip dots
+    if (e.hits>0&&state.weapon!=='power_sword'){
+      for(let h=0;h<3;h++){ctx.fillStyle=h<(3-e.hits)?'#ff3860':'#333';ctx.fillRect(ex-6+h*5,ey-18*s,4,4);}
+    }
+    // Chase marker
+    if (e.chasing){ctx.fillStyle='#ffff00';ctx.shadowColor='#ffff00';ctx.shadowBlur=8;ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('!',ex,ey-13*s);}
+    ctx.restore();
+  }
+  // Weapon pickups
+  for (const wp of state.weaponPickups) {
+    if (wp.collected) continue;
+    if (!vis.has(`${wp.x},${wp.y}`)&&!fullReveal) continue;
+    const wx2=wp.x*CELL+CELL/2+1, wy2=wp.y*CELL+CELL/2+1;
+    const bob=Math.sin(time*0.09+wp.x+wp.y)*3;
+    const col=wp.type==='power_sword'?'#00f5ff':'#ff6b35';
+    ctx.save();
+    ctx.shadowColor=col; ctx.shadowBlur=10+4*Math.abs(Math.sin(time*0.07));
+    ctx.font=`${16+Math.abs(bob)*0.3}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(wp.type==='power_sword'?'*':'o', wx2, wy2+bob);
+    ctx.restore();
+  }
+  // Attack flash — arc sweep around player
+  if (state.attackAnim > 0) {
+    state.attackAnim--;
+    const apx = state.player.x*CELL+CELL/2+1;
+    const apy = state.player.y*CELL+CELL/2+1;
+    const prog = 1 - state.attackAnim/10;
+    ctx.save();
+    ctx.globalAlpha = 0.85 - prog*0.85;
+    const swingCol = state.weapon === 'power_sword' ? '#00f5ff' : '#ffb800';
+    ctx.strokeStyle = swingCol;
+    ctx.lineWidth = 5;
+    ctx.shadowColor = swingCol;
+    ctx.shadowBlur = 18;
+    // Draw a wide arc sweep (covers full circle for omni attack)
+    ctx.beginPath();
+    ctx.arc(apx, apy, CELL * (0.7 + prog * 0.4), 0, Math.PI * 2);
+    ctx.stroke();
+    // Draw sword line
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = (1-prog)*0.9;
+    const swordLen = CELL * 1.4;
+    const angle = prog * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(apx, apy);
+    ctx.lineTo(apx + Math.cos(angle)*swordLen, apy + Math.sin(angle)*swordLen);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawEnemiesOnMinimap() {
+  const cw2=miniMapCanvas.width/MAZE_W, ch2=miniMapCanvas.height/MAZE_H;
+  const fullReveal=state.revealed&&Date.now()<state.revealEnd;
+  for (const e of state.enemies) {
+    if (e.dead) continue;
+    if (!state.visibleCells.has(`${e.x},${e.y}`)&&!fullReveal) continue;
+    miniCtx.fillStyle='#ff3860';
+    miniCtx.fillRect(e.x*cw2+cw2*0.2,e.y*ch2+ch2*0.2,cw2*0.6,ch2*0.6);
+  }
+}
+
 function gameLoop() {
   time++;
   const now = Date.now();
@@ -1949,8 +2340,13 @@ function gameLoop() {
       if (state.keys[key]) { tryMove(dir.dx, dir.dy); state.lastMoveTime = now; break; }
     }
   }
+  // Check invincibility expiry
+  if (state.invincible && Date.now() > state.invincibleEnd) state.invincible = false;
+  updateEnemies();
   drawMaze();
+  drawEnemies();
   drawMiniMap();
+  drawEnemiesOnMinimap();
   state.animFrame = requestAnimationFrame(gameLoop);
 }
 
@@ -1967,6 +2363,9 @@ function gameLoop() {
     state.exit = placeExit(state.maze);
     state.nodes = placeNodes(state.maze, state.questionCount, state.exit);
     state.powerups = placePowerups(state.maze, state.nodes, state.exit);
+  const enemyCount = ENEMY_COUNT[difficulty] || 5;
+  state.enemies = placeEnemies(state.maze, state.nodes, state.exit, enemyCount);
+  state.weaponPickups = placeWeaponPickups(state.maze, state.nodes, state.enemies, state.exit);
   state.player = {x:0,y:0};
   state.timer=0; state.correct=0; state.wrong=0; state.totalAnswered=0;
   state.streak=0; state.maxStreak=0;
@@ -1976,6 +2375,10 @@ function gameLoop() {
   state.powerupInventory={freeze:0,hint:0,boost:0,reveal:0};
   state.frozen=false; state.boostActive=false; state.revealed=false;
   state.activeHintEliminated=[];
+  // Combat reset
+  state.hearts=3; state.invincible=false; state.invincibleEnd=0;
+  state.weapon='sword'; state.bombs=0; state.kills=0;
+  state.attackAnim=0; state.lastEnemyTick=0;
   particles.length = 0;
 
   updateVisibility();
@@ -1997,6 +2400,8 @@ function gameLoop() {
   document.getElementById('muteBtn').classList.add('show');
   if ('ontouchstart' in window || window.innerWidth <= 720) {
     document.getElementById('dpad').classList.add('show');
+    const cb = document.getElementById('combatBtns');
+    if (cb) cb.style.display='flex';
   }
 
     document.getElementById('questionText').textContent = 'Find question nodes, answer them, then reach the exit to win.';
@@ -2026,7 +2431,8 @@ async function finishGame() {
 
     const totalAnswered = state.totalAnswered;
     const acc = totalAnswered > 0 ? Math.round(state.correct / totalAnswered * 100) : 0;
-    const score = state.correct * 1000000 - state.timer;
+    // Score: questions + kills bonus - time penalty
+    const score = (state.correct * 1000000) + (state.kills * 500) - state.timer;
     const entry = {
       name: state.playerName,
       time: state.timer,
@@ -2036,6 +2442,7 @@ async function finishGame() {
       totalQuestions: state.questionCount,
       streak: state.maxStreak,
       difficulty: state.difficulty,
+      kills: state.kills,
       score,
       date: Date.now(),
     };
@@ -2044,6 +2451,8 @@ async function finishGame() {
   document.getElementById('finishTime').textContent = formatTime(state.timer);
     document.getElementById('finishAccuracy').textContent = `${state.correct}/${state.questionCount}`;
   document.getElementById('finishStreak').textContent = state.maxStreak+'x';
+  // Show kills in rank area until rank loads
+  document.getElementById('finishRank').textContent = `☠${state.kills}`;
   showScreen('finish');
   setFbStatus('Finish', 'SAVING...', 'loading');
 
@@ -2058,6 +2467,8 @@ async function finishGame() {
 
   document.getElementById('muteBtn').classList.remove('show');
   document.getElementById('dpad').classList.remove('show');
+  const cb2 = document.getElementById('combatBtns');
+  if (cb2) cb2.style.display='none';
 }
 
 // â”€â”€ LEADERBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2139,18 +2550,75 @@ function drawCharPreview() {
 // â”€â”€ TOUCH / SWIPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let touchStart = null;
 canvas.addEventListener('touchstart', e => {
-  touchStart = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  touchStart = {x:e.touches[0].clientX, y:e.touches[0].clientY, t:Date.now()};
   e.preventDefault();
 }, {passive:false});
+
 canvas.addEventListener('touchend', e => {
   if (!touchStart) return;
   const dx = e.changedTouches[0].clientX - touchStart.x;
   const dy = e.changedTouches[0].clientY - touchStart.y;
-  if (Math.max(Math.abs(dx),Math.abs(dy)) < 12) return;
-  if (Math.abs(dx) > Math.abs(dy)) tryMove(dx>0?1:-1, 0);
-  else tryMove(0, dy>0?1:-1);
-  touchStart = null; e.preventDefault();
+  const dist = Math.max(Math.abs(dx), Math.abs(dy));
+  const elapsed = Date.now() - touchStart.t;
+
+  if (dist < 12 && elapsed < 300) {
+    // Short tap = sword attack toward tapped cell
+    handleCanvasAttack(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    touchStart = null;
+    e.preventDefault();
+    return;
+  }
+  // Swipe = move
+  if (dist >= 12) {
+    if (Math.abs(dx) > Math.abs(dy)) tryMove(dx>0?1:-1, 0);
+    else tryMove(0, dy>0?1:-1);
+  }
+  touchStart = null;
+  e.preventDefault();
 }, {passive:false});
+
+// Mouse click on canvas = sword attack
+canvas.addEventListener('click', e => {
+  if (state.screen !== 'game') return;
+  handleCanvasAttack(e.clientX, e.clientY);
+});
+
+// Convert a screen click/tap position to maze cell and attack in that direction
+function handleCanvasAttack(clientX, clientY) {
+  if (state.finished || state.questionActive) return;
+
+  // Get canvas bounds and scale factor
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+
+  // Convert to canvas pixel coords
+  const canvasX = (clientX - rect.left) * scaleX;
+  const canvasY = (clientY - rect.top)  * scaleY;
+
+  // Convert to maze cell (subtract 1px border offset)
+  const cellX = Math.floor((canvasX - 1) / CELL);
+  const cellY = Math.floor((canvasY - 1) / CELL);
+
+  const px = state.player.x, py = state.player.y;
+  const diffX = cellX - px;
+  const diffY = cellY - py;
+
+  // Determine dominant direction of attack
+  let dirX = 0, dirY = 0;
+  if (Math.abs(diffX) >= Math.abs(diffY)) {
+    dirX = diffX === 0 ? 0 : (diffX > 0 ? 1 : -1);
+  } else {
+    dirY = diffY === 0 ? 0 : (diffY > 0 ? 1 : -1);
+  }
+
+  // If clicked on own cell or very close — attack all adjacent
+  if (Math.abs(diffX) <= 1 && Math.abs(diffY) <= 1) {
+    attackWithSword(undefined, undefined);
+  } else {
+    attackWithSword(dirX, dirY);
+  }
+}
 
 // D-pad buttons (touch + click)
 function setupDpadBtn(id, dx, dy) {
@@ -2163,6 +2631,17 @@ setupDpadBtn('dUp', 0,-1);
 setupDpadBtn('dDown', 0,1);
 setupDpadBtn('dLeft', -1,0);
 setupDpadBtn('dRight', 1,0);
+// Combat mobile buttons
+const attackBtn = document.getElementById('attackBtn');
+const bombBtn   = document.getElementById('bombBtn');
+if (attackBtn) {
+  attackBtn.addEventListener('click', () => attackWithSword(undefined, undefined));
+  attackBtn.addEventListener('touchend', e=>{ e.preventDefault(); attackWithSword(undefined, undefined); });
+}
+if (bombBtn) {
+  bombBtn.addEventListener('click', dropBomb);
+  bombBtn.addEventListener('touchend', e=>{ e.preventDefault(); dropBomb(); });
+}
 
 // â”€â”€ KEYBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.addEventListener('keydown', e => {
@@ -2175,6 +2654,8 @@ document.addEventListener('keydown', e => {
   if (e.key==='2') usePowerup('hint');
   if (e.key==='3') usePowerup('boost');
   if (e.key==='4') usePowerup('reveal');
+  if (e.key==='f'||e.key==='F') attackWithSword(undefined, undefined);
+  if (e.key==='b'||e.key==='B') dropBomb();
   if (e.key==='m'||e.key==='M') audio.toggleMute();
 });
 document.addEventListener('keyup', e => { state.keys[e.key]=false; });
