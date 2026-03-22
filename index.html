@@ -463,40 +463,68 @@
   #lbScreen { gap: 14px; padding: 20px; background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f); }
   .lb-screen-title { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 900; color: var(--accent2); text-shadow: var(--glow2); }
 
-  /* Home button */
-  #homeBtn {
-    position: fixed; top: 12px; left: 12px; z-index: 800;
-    background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
+  /* ── TOP-LEFT CONTROL CLUSTER ── */
+  #topLeftCluster {
+    position: fixed; top: 12px; left: 12px;
+    z-index: 800;
+    display: flex; flex-direction: column; gap: 6px;
+    align-items: flex-start;
+  }
+
+  /* Links dropdown button */
+  #linksBtn {
+    background: #0a1520; border: 1px solid var(--accent2); color: var(--accent2);
     padding: 6px 12px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    cursor: pointer; transition: all 0.2s;
     display: flex; align-items: center; gap: 6px;
-    -webkit-tap-highlight-color: transparent;
-    letter-spacing: 0.1em;
+    -webkit-tap-highlight-color: transparent; letter-spacing: 0.1em;
+    white-space: nowrap; user-select: none;
   }
-  #homeBtn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
+  #linksBtn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
+  #linksBtn .arrow {
+    display: inline-block; transition: transform 0.2s;
+    font-size: 9px;
+  }
+  #linksBtn.open .arrow { transform: rotate(180deg); }
 
-  /* SFX mute button */
-  #muteBtn {
-    position: fixed; top: 12px; right: 12px; z-index: 800;
+  /* Dropdown menu */
+  #linksMenu {
+    background: #080f17;
+    border: 1px solid var(--accent2);
+    box-shadow: 0 4px 24px #7b00ff44;
+    display: none; flex-direction: column;
+    min-width: 210px;
+    overflow: hidden;
+  }
+  #linksMenu.open { display: flex; }
+  #linksMenu a {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--dim); text-decoration: none;
+    padding: 8px 14px; letter-spacing: 0.1em;
+    border-bottom: 1px solid #0d1a28;
+    transition: all 0.15s; white-space: nowrap;
+    display: block;
+  }
+  #linksMenu a:last-child { border-bottom: none; }
+  #linksMenu a:hover { background: #0d1f30; color: var(--accent); padding-left: 20px; }
+
+  /* Sound buttons row — sit below the links cluster */
+  #soundBtns {
+    display: flex; gap: 5px; align-items: center;
+  }
+  #muteBtn, #musicBtn {
     background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
-    padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    cursor: pointer; transition: all 0.2s; display: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #muteBtn.show { display: block; }
-  #muteBtn:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* Music toggle button — sits left of SFX button */
-  #musicBtn {
-    position: fixed; top: 12px; right: 110px; z-index: 800;
-    background: #0a1520; border: 1px solid var(--correct); color: var(--correct);
-    padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    cursor: pointer; transition: all 0.2s; display: none;
+    padding: 5px 9px; font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    cursor: pointer; transition: all 0.2s;
     -webkit-tap-highlight-color: transparent; letter-spacing: 0.05em;
+    white-space: nowrap;
   }
-  #musicBtn.show { display: block; }
+  #muteBtn:hover  { border-color: var(--accent); color: var(--accent); }
+  #musicBtn       { border-color: var(--correct); color: var(--correct); }
   #musicBtn:hover { box-shadow: 0 0 8px #00ff9d66; }
   #musicBtn.muted { border-color: var(--dim); color: var(--dim); }
+  #soundBtns { display: none; }
+  #soundBtns.show { display: flex; }
 
   /* Mobile D-pad */
   #dpad {
@@ -712,15 +740,29 @@
 <!-- Matrix rain canvas -->
 <canvas id="matrixCanvas"></canvas>
 
-<!-- HOME BUTTON -->
-<a id="homeBtn" href="https://www.earnwithhatty.com" title="Back to EarnWithHatty.com">HOME</a>
-
-<!-- MUTE BUTTON -->
-<button id="muteBtn">SOUND ON</button>
+<!-- TOP-LEFT CLUSTER: Links dropdown + sound buttons -->
+<div id="topLeftCluster">
+  <button id="linksBtn">&#9776; LINKS <span class="arrow">&#9660;</span></button>
+  <nav id="linksMenu">
+    <a href="https://earnwithhatty.com/"                         target="_blank" rel="noopener">Learn With Hatty</a>
+    <a href="https://earn-with-hatty-tools.netlify.app/"         target="_blank" rel="noopener">Hatty's Tools</a>
+    <a href="https://hattys-media.netlify.app/"                  target="_blank" rel="noopener">Hatty's Media</a>
+    <a href="https://privacy-gadgets-hub.netlify.app/"           target="_blank" rel="noopener">Privacy Gadgets</a>
+    <a href="https://hatty-universe.netlify.app/"                target="_blank" rel="noopener">Hatty's Universe</a>
+    <a href="https://hattys-news.netlify.app/"                   target="_blank" rel="noopener">Hatty's News</a>
+    <a href="https://hattyhats.github.io/Open-Focus/"            target="_blank" rel="noopener">Open Focus</a>
+    <a href="https://orbit-node.netlify.app/"                    target="_blank" rel="noopener">OrbitNode</a>
+    <a href="https://case-board.netlify.app/"                    target="_blank" rel="noopener">CaseBoard</a>
+    <a href="https://hattyhats.github.io/token-tokens/"          target="_blank" rel="noopener">Token-Tokens</a>
+  </nav>
+  <div id="soundBtns">
+    <button id="musicBtn" title="Toggle Music">&#9834; MUSIC ON</button>
+    <button id="muteBtn">SFX ON</button>
+  </div>
+</div>
 
 <!-- Background music -->
 <audio id="bgMusic" src="classical-music.mp3" loop preload="auto"></audio>
-<button id="musicBtn" title="Toggle Music">♪ MUSIC ON</button>
 
 <!-- START SCREEN -->
 <div class="screen" id="startScreen">
@@ -2326,7 +2368,7 @@ function playerDied() {
       document.getElementById('finishRank').textContent='#'+(rank||'?');
       renderLeaderboard('lbBody',lb,entry);
     });
-    document.getElementById('muteBtn').classList.remove('show');
+    document.getElementById('soundBtns').classList.remove('show');
     document.getElementById('dpad').classList.remove('show');
     const cb2=document.getElementById('combatBtns'); if(cb2)cb2.style.display='none';
   },1200);
@@ -2578,7 +2620,7 @@ function gameLoop() {
   gameLoop();
 
   // Show mute button and D-pad
-  document.getElementById('muteBtn').classList.add('show');
+  document.getElementById('soundBtns').classList.add('show');
   if ('ontouchstart' in window || window.innerWidth <= 720) {
     document.getElementById('dpad').classList.add('show');
     const cb = document.getElementById('combatBtns');
@@ -2693,8 +2735,7 @@ function showScreen(name) {
   const gpb = document.getElementById('gamePartnerBtns');
   if(gpb) gpb.classList.toggle('show', name==='game');
   // Music button visibility + music control
-  const mb = document.getElementById('musicBtn');
-  if(mb) mb.classList.toggle('show', name==='game');
+  // sound buttons now controlled via #soundBtns wrapper — no individual toggle needed
   if(name === 'game') {
     if(typeof startGameMusic === 'function') startGameMusic();
   } else {
@@ -3103,6 +3144,29 @@ async function animateLoadBar() {
   };
 
   document.getElementById('musicBtn').addEventListener('click', window.toggleMusic);
+})();
+
+
+// ── LINKS DROPDOWN ────────────────────────────────────────────────────
+(function() {
+  var btn  = document.getElementById('linksBtn');
+  var menu = document.getElementById('linksMenu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = menu.classList.toggle('open');
+    btn.classList.toggle('open', open);
+  });
+
+  // Close when clicking anywhere else
+  document.addEventListener('click', function() {
+    menu.classList.remove('open');
+    btn.classList.remove('open');
+  });
+
+  // Prevent menu clicks from closing immediately
+  menu.addEventListener('click', function(e) { e.stopPropagation(); });
 })();
 
 </script>
