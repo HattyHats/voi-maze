@@ -1089,20 +1089,28 @@ var matrixRain = (function() {
   }
   function draw(ctx, canvasW, canvasH) {
     if (!active) return;
-    // Very light fade — keeps characters ghost-like behind maze
-    ctx.save();
+    // No save/restore needed — no state we need to preserve here
+    // No shadowBlur — rain doesn't need glow
     ctx.fillStyle = 'rgba(5,10,15,0.04)';
     ctx.fillRect(0, 0, canvasW, canvasH);
     ctx.font = '11px monospace';
-    for (var i = 0; i < cols; i++) {
+    ctx.shadowBlur = 0; // ensure glow is off
+    // Draw all cyan columns first, then green — avoid fillStyle thrashing
+    ctx.fillStyle = 'rgba(0,245,255,0.18)';
+    for (var i = 0; i < cols; i += 3) {
       var ch = CHARS[Math.floor(Math.random() * CHARS.length)];
-      // Alternate cyan / green, very low opacity so maze shows clearly
-      ctx.fillStyle = (i % 3 === 0) ? 'rgba(0,245,255,0.18)' : 'rgba(0,255,157,0.13)';
       ctx.fillText(ch, i * colW, drops[i] * colW);
       if (drops[i] * colW > canvasH && Math.random() > 0.97) drops[i] = 0;
       drops[i] += 0.45;
     }
-    ctx.restore();
+    ctx.fillStyle = 'rgba(0,255,157,0.13)';
+    for (var j = 1; j < cols; j++) {
+      if (j % 3 === 0) continue; // already drawn above
+      var ch2 = CHARS[Math.floor(Math.random() * CHARS.length)];
+      ctx.fillText(ch2, j * colW, drops[j] * colW);
+      if (drops[j] * colW > canvasH && Math.random() > 0.97) drops[j] = 0;
+      drops[j] += 0.45;
+    }
   }
   return {
     init: init,
@@ -1592,28 +1600,7 @@ function spawnParticles(wx, wy, color, count=6) {
   }
 }
 
-function updateParticles() {
-  for (let i = particles.length-1; i >= 0; i--) {
-    const p = particles[i];
-    p.x += p.vx; p.y += p.vy;
-    p.vy += 0.05;
-    p.life -= p.decay;
-    if (p.life <= 0) particles.splice(i,1);
-  }
-}
-
-function drawParticles() {
-  for (const p of particles) {
-    ctx.save();
-    ctx.globalAlpha = p.life;
-    ctx.shadowColor = p.color; ctx.shadowBlur = 6;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
+// particles updated+drawn inline in drawMaze
 
 // â”€â”€ GAME STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let state = {
@@ -1684,178 +1671,143 @@ function getStoneOffsets(key) {
 function drawMaze() {
   ctx.fillStyle = '#020609';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  // Draw matrix rain as subtle background layer (confined to this canvas)
+
+  // Matrix rain behind everything
   matrixRain.draw(ctx, canvas.width, canvas.height);
 
-  const walls = state.maze;
-  const vis = state.visibleCells;
+  const walls      = state.maze;
+  const vis        = state.visibleCells;
   const fullReveal = state.revealed && Date.now() < state.revealEnd;
 
-  // Draw fog-of-war cells (dimly visible discovered cells)
-  for (let y=0; y<MAZE_H; y++) {
-    for (let x=0; x<MAZE_W; x++) {
-      const key = `${x},${y}`;
-      const isVisible = vis.has(key);
-      if (!isVisible && !fullReveal) continue;
-      const cx=x*CELL+1, cy=y*CELL+1;
-
-      // Stone floor gradient
-      const grad = ctx.createLinearGradient(cx, cy, cx+CELL, cy+CELL);
-      grad.addColorStop(0, isVisible ? '#0c1520' : '#060c12');
-      grad.addColorStop(1, isVisible ? '#07101a' : '#030810');
-      ctx.fillStyle = grad;
+  // ── FLOOR TILES — flat colour, no per-tile gradient ───────────────
+  for (let y = 0; y < MAZE_H; y++) {
+    for (let x = 0; x < MAZE_W; x++) {
+      const isVis = vis.has(`${x},${y}`);
+      if (!isVis && !fullReveal) continue;
+      const cx = x*CELL+1, cy = y*CELL+1;
+      ctx.fillStyle = isVis ? '#0c1520' : '#07101a';
       ctx.fillRect(cx, cy, CELL, CELL);
-
-      // Stone texture marks
-      if (isVisible) {
-        const stones = getStoneOffsets(key);
+      if (isVis) {
+        const stones = getStoneOffsets(`${x},${y}`);
         ctx.fillStyle = '#0a1825';
         for (const s of stones) ctx.fillRect(cx+s.x, cy+s.y, s.w, s.h);
       }
-
-      // Grid line subtle
-      ctx.strokeStyle = isVisible ? '#0d1e2e' : '#050d14';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(cx, cy, CELL, CELL);
     }
   }
 
-  // Glow for player's immediate area
-  const px = state.player.x*CELL+CELL/2+1;
-  const py = state.player.y*CELL+CELL/2+1;
-  const lightRad = CELL * 2.5;
-  const lightGrad = ctx.createRadialGradient(px, py, 0, px, py, lightRad);
-  lightGrad.addColorStop(0, state.frozen ? '#00cfff18' : '#00f5ff12');
-  lightGrad.addColorStop(1, 'transparent');
-  ctx.fillStyle = lightGrad;
-  ctx.fillRect(Math.max(0,px-lightRad), Math.max(0,py-lightRad), lightRad*2, lightRad*2);
+  // ── PLAYER LIGHT — one radial gradient ────────────────────────────
+  const ppx = state.player.x*CELL+CELL/2+1;
+  const ppy = state.player.y*CELL+CELL/2+1;
+  const lr  = CELL * 2.5;
+  const lg  = ctx.createRadialGradient(ppx, ppy, 0, ppx, ppy, lr);
+  lg.addColorStop(0, state.frozen ? '#00cfff18' : '#00f5ff12');
+  lg.addColorStop(1, 'transparent');
+  ctx.fillStyle = lg;
+  ctx.fillRect(Math.max(0,ppx-lr), Math.max(0,ppy-lr), lr*2, lr*2);
 
-  // Walls with glow
-  for (let y=0; y<MAZE_H; y++) {
-    for (let x=0; x<MAZE_W; x++) {
-      const key = `${x},${y}`;
-      if (!vis.has(key) && !fullReveal) continue;
-      const cx=x*CELL+1, cy=y*CELL+1;
-      const w = walls[y][x];
-      const wallCol = state.frozen ? '#00cfff' : '#00f5ff';
-      if (y===0) drawWall(cx, cy, cx+CELL, cy, wallCol);
-      if (x===0) drawWall(cx, cy, cx, cy+CELL, wallCol);
-      if (w.right) drawWall(cx+CELL, cy, cx+CELL, cy+CELL, wallCol);
-      if (w.bottom) drawWall(cx, cy+CELL, cx+CELL, cy+CELL, wallCol);
+  // ── WALLS — single batched path, ONE shadow call ───────────────────
+  const wallCol = state.frozen ? '#00cfff' : '#00f5ff';
+  ctx.save();
+  ctx.shadowColor = wallCol;
+  ctx.shadowBlur  = 5;
+  ctx.strokeStyle = wallCol;
+  ctx.lineWidth   = 2;
+  ctx.beginPath();
+  for (let y = 0; y < MAZE_H; y++) {
+    for (let x = 0; x < MAZE_W; x++) {
+      if (!vis.has(`${x},${y}`) && !fullReveal) continue;
+      const cx = x*CELL+1, cy = y*CELL+1;
+      const w  = walls[y][x];
+      if (y === 0) { ctx.moveTo(cx, cy);     ctx.lineTo(cx+CELL, cy);     }
+      if (x === 0) { ctx.moveTo(cx, cy);     ctx.lineTo(cx, cy+CELL);     }
+      if (w.right)  { ctx.moveTo(cx+CELL,cy); ctx.lineTo(cx+CELL,cy+CELL); }
+      if (w.bottom) { ctx.moveTo(cx,cy+CELL); ctx.lineTo(cx+CELL,cy+CELL); }
     }
   }
+  ctx.stroke();
+  ctx.restore();
 
-  // Power-ups with animated glow
+  // ── POWER-UPS ──────────────────────────────────────────────────────
   for (const pu of state.powerups) {
     if (pu.collected) continue;
-    const key=`${pu.x},${pu.y}`;
-    if (!vis.has(key) && !fullReveal) continue;
-    const ppx=pu.x*CELL+CELL/2+1, ppy=pu.y*CELL+CELL/2+1;
-    const bob = Math.sin(time*0.08+pu.x+pu.y)*3;
-    const col = PU_COLORS[pu.type];
-
-    // Glow halo
-    const halo = ctx.createRadialGradient(ppx, ppy+bob, 0, ppx, ppy+bob, 16);
-    halo.addColorStop(0, col+'44');
-    halo.addColorStop(1, 'transparent');
-    ctx.fillStyle = halo;
-    ctx.fillRect(ppx-16, ppy+bob-16, 32, 32);
-
+    if (!vis.has(`${pu.x},${pu.y}`) && !fullReveal) continue;
+    const px2  = pu.x*CELL+CELL/2+1, py2 = pu.y*CELL+CELL/2+1;
+    const bob  = Math.sin(time*0.08+pu.x+pu.y)*2;
+    const col  = PU_COLORS[pu.type];
     ctx.save();
-    ctx.shadowColor = col; ctx.shadowBlur = 10+5*Math.abs(Math.sin(time*0.05));
-    ctx.font = `${15+Math.abs(bob)*0.5}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(PU_ICONS[pu.type], ppx, ppy+bob);
+    ctx.shadowColor  = col;
+    ctx.shadowBlur   = 8;
+    ctx.fillStyle    = col;
+    ctx.font         = '14px serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(PU_ICONS[pu.type], px2, py2+bob);
     ctx.restore();
   }
 
-  // Question nodes
+  // ── QUESTION NODES — answered (cheap dots) ─────────────────────────
+  ctx.fillStyle = '#00ff9d';
   for (const node of state.nodes) {
-    const key=`${node.x},${node.y}`;
-    if (!vis.has(key) && !fullReveal) continue;
-    const nx=node.x*CELL+CELL/2+1, ny=node.y*CELL+CELL/2+1;
-
-    if (node.answered) {
-      // Completed node - green check
-      ctx.save();
-      ctx.shadowColor = '#00ff9d'; ctx.shadowBlur = 6;
-      ctx.beginPath(); ctx.arc(nx, ny, 5, 0, Math.PI*2);
-      ctx.fillStyle = '#00ff9d'; ctx.fill();
-      ctx.restore();
-    } else {
-      const pulse = 0.7+0.3*Math.sin(time*0.06+node.x+node.y);
-        const col = '#7b00ff';
-      const r = 7*pulse;
-
-      // Outer glow ring
-      const glowGrad = ctx.createRadialGradient(nx, ny, 0, nx, ny, r*2.5);
-      glowGrad.addColorStop(0, col+'55');
-      glowGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(nx-r*2.5, ny-r*2.5, r*5, r*5);
-
-      ctx.save();
-      ctx.shadowColor = col; ctx.shadowBlur = 12*pulse;
-      ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI*2);
-      ctx.fillStyle = col; ctx.fill();
-      // Inner highlight
-      ctx.beginPath(); ctx.arc(nx-r*0.3, ny-r*0.3, r*0.3, 0, Math.PI*2);
-      ctx.fillStyle = col+'99'; ctx.fill();
-      ctx.restore();
-
-      // Rotating ring
-      ctx.save();
-      ctx.translate(nx, ny);
-      ctx.rotate(time * 0.03);
-      ctx.beginPath();
-      for (let a=0; a<4; a++) {
-        ctx.arc(0, 0, r+4, (a/4)*Math.PI*2, (a/4+0.15)*Math.PI*2);
-      }
-      ctx.strokeStyle = col+'88'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.restore();
-    }
-
-    // Exit portal
-    if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
-      const ex = state.exit.x*CELL+CELL/2+1, ey = state.exit.y*CELL+CELL/2+1;
-      const pulse = 0.7 + 0.3*Math.sin(time*0.08);
-      const r = 10 * pulse;
-      const glowGrad = ctx.createRadialGradient(ex, ey, 0, ex, ey, r*3);
-      glowGrad.addColorStop(0, EXIT_COLOR+'55');
-      glowGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(ex-r*3, ey-r*3, r*6, r*6);
-      ctx.save();
-      ctx.shadowColor = EXIT_COLOR; ctx.shadowBlur = 16*pulse;
-      ctx.beginPath(); ctx.arc(ex, ey, r, 0, Math.PI*2);
-      ctx.fillStyle = EXIT_COLOR; ctx.fill();
-      ctx.restore();
-      ctx.save();
-      ctx.translate(ex, ey);
-      ctx.rotate(-time * 0.04);
-      ctx.beginPath();
-      ctx.arc(0, 0, r+5, 0, Math.PI*2);
-      ctx.strokeStyle = EXIT_COLOR+'aa'; ctx.lineWidth = 2; ctx.stroke();
-      ctx.restore();
-    }
+    if (!node.answered) continue;
+    if (!vis.has(`${node.x},${node.y}`) && !fullReveal) continue;
+    const nx = node.x*CELL+CELL/2+1, ny = node.y*CELL+CELL/2+1;
+    ctx.beginPath(); ctx.arc(nx, ny, 4, 0, Math.PI*2); ctx.fill();
   }
 
-  drawParticles();
-  updateParticles();
+  // ── QUESTION NODES — unanswered (one save/restore for group) ───────
+  ctx.save();
+  for (const node of state.nodes) {
+    if (node.answered) continue;
+    if (!vis.has(`${node.x},${node.y}`) && !fullReveal) continue;
+    const nx    = node.x*CELL+CELL/2+1, ny = node.y*CELL+CELL/2+1;
+    const pulse = 0.75 + 0.25*Math.sin(time*0.07+node.x+node.y);
+    const r     = 6*pulse;
+    ctx.shadowColor = '#7b00ff';
+    ctx.shadowBlur  = 10*pulse;
+    ctx.fillStyle   = '#7b00ff';
+    ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI*2); ctx.fill();
+    // Rotating arc every other frame
+    if (time % 2 === 0) {
+      ctx.shadowBlur  = 0;
+      ctx.strokeStyle = '#7b00ff99';
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath();
+      ctx.arc(nx, ny, r+3, time*0.03, time*0.03+Math.PI*1.2);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // ── EXIT PORTAL ────────────────────────────────────────────────────
+  if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
+    const ex    = state.exit.x*CELL+CELL/2+1, ey = state.exit.y*CELL+CELL/2+1;
+    const pulse = 0.75 + 0.25*Math.sin(time*0.08);
+    const r     = 9*pulse;
+    ctx.save();
+    ctx.shadowColor = EXIT_COLOR; ctx.shadowBlur = 14*pulse;
+    ctx.fillStyle   = EXIT_COLOR;
+    ctx.beginPath(); ctx.arc(ex, ey, r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur  = 0;
+    ctx.strokeStyle = EXIT_COLOR+'99'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(ex, ey, r+4, -time*0.04, -time*0.04+Math.PI*1.8);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── PARTICLES — no save/restore per particle ───────────────────────
+  for (let i = particles.length-1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i,1); continue; }
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle   = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size*p.life, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
   drawPlayer();
 }
 
-function drawWall(x1, y1, x2, y2, col='#00f5ff') {
-  ctx.save();
-  ctx.shadowColor = col; ctx.shadowBlur = 6;
-  // Main wall
-  ctx.strokeStyle = col; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  // Inner bright line
-  ctx.strokeStyle = col+'cc'; ctx.lineWidth = 0.5;
-  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  ctx.restore();
-}
 
 function drawPlayer() {
   const {x,y} = state.player;
@@ -1865,20 +1817,15 @@ function drawPlayer() {
 
   ctx.save();
 
-  // Shadow on floor
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  // Floor shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
   ctx.beginPath();
-  ctx.ellipse(px, py+8*s+bob+4, 9*s, 3*s, 0, 0, Math.PI*2);
+  ctx.ellipse(px, py+8*s+bob+3, 8*s, 2.5*s, 0, 0, Math.PI*2);
   ctx.fill();
 
-  // Glow aura
-  if (state.boostActive) {
-    ctx.shadowColor = '#ff6b35'; ctx.shadowBlur = 20;
-  } else if (state.frozen) {
-    ctx.shadowColor = '#00cfff'; ctx.shadowBlur = 14;
-  } else {
-    ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 10;
-  }
+  // One glow setting for whole player
+  ctx.shadowColor = state.boostActive ? '#ff6b35' : state.frozen ? '#00cfff' : '#00f5ff';
+  ctx.shadowBlur  = state.boostActive ? 18 : 8;
 
   // Body (shirt - dark)
   ctx.fillStyle = state.boostActive ? '#4a1800' : '#1e2a3a';
@@ -1995,6 +1942,8 @@ const KEY_MAP = {
   w:{dx:0,dy:-1}, s:{dx:0,dy:1}, a:{dx:-1,dy:0}, d:{dx:1,dy:0},
   W:{dx:0,dy:-1}, S:{dx:0,dy:1}, A:{dx:-1,dy:0}, D:{dx:1,dy:0},
 };
+// Pre-compute entries array so gameLoop doesn't call Object.entries each frame
+const KEY_MAP_ENTRIES = Object.entries(KEY_MAP);
 
   function canMove(x, y, dx, dy) {
   const w = state.maze;
@@ -2548,7 +2497,8 @@ function drawEnemies() {
     const pulse=0.85+0.15*Math.sin(time*0.12+e.id);
     const s=1.3*pulse;
     ctx.save();
-    ctx.shadowColor=e.chasing?'#ff006e':'#ff6b35'; ctx.shadowBlur=e.chasing?14:6;
+    // Only expensive shadow for chasing enemies — idle enemies skip it
+    if (e.chasing) { ctx.shadowColor='#ff006e'; ctx.shadowBlur=12; }
     const bodyCol=isBlinking?'#ffffff':(e.chasing?'#cc1133':'#992211');
     // Torso
     ctx.fillStyle=bodyCol; ctx.fillRect(ex-4*s,ey-4*s,8*s,9*s);
@@ -2628,7 +2578,7 @@ function gameLoop() {
   time++;
   const now = Date.now();
   if (now - state.lastMoveTime > 140 && !state.questionActive) {
-    for (const [key, dir] of Object.entries(KEY_MAP)) {
+    for (const [key, dir] of KEY_MAP_ENTRIES) {
       if (state.keys[key]) { tryMove(dir.dx, dir.dy); state.lastMoveTime = now; break; }
     }
   }
