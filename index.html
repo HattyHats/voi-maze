@@ -2954,17 +2954,6 @@ function drawSplashChar() {
   cx.fillStyle = '#fff';
   cx.fillRect(px-3*s, py-13*s, 1*s, 1*s);
   cx.fillRect(px+3*s, py-13*s, 1*s, 1*s);
-  // Sword (right hand, angled)
-  cx.save();
-  cx.translate(px+12*s, py+2*s);
-  cx.rotate(-0.5);
-  cx.fillStyle = '#aabbcc';
-  cx.fillRect(-2, -s*9, 3, s*9);   // blade
-  cx.fillStyle = '#888';
-  cx.fillRect(-s*2, -s, s*4, s*2); // guard
-  cx.fillStyle = '#c8a882';
-  cx.fillRect(-1, 0, 3, s*3);      // handle
-  cx.restore();
 }
 
 async function runSplash() {
