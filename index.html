@@ -54,13 +54,9 @@
     opacity: 0.12;
     pointer-events: none;
   }
-  /* Matrix rain canvas behind everything */
-  #matrixCanvas {
-    position: fixed; inset: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 2;
-  }
+  /* matrixCanvas is no longer used as fullscreen overlay —
+     rain is drawn directly on gameCanvas each frame */
+  #matrixCanvas { display: none !important; }
 
   /* Animated bg maze on start screen */
   #bgMazeCanvas {
@@ -212,7 +208,7 @@
   /* â”€â”€â”€ GAME SCREEN â”€â”€â”€ */
   #gameScreen {
     flex-direction: row; align-items: stretch; justify-content: flex-start;
-    background: var(--bg); padding: 0;
+    background: transparent; padding: 0;
   }
   #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; }
 
@@ -425,7 +421,7 @@
 
   #canvasWrapper {
     flex: 1; overflow: auto; display: flex;
-    align-items: center; justify-content: center; background: var(--bg);
+    align-items: center; justify-content: center; background: transparent;
   }
 
   #lbScreen { gap: 14px; padding: 20px; background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f); }
@@ -443,7 +439,7 @@
   }
   #homeBtn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
 
-  /* Mute button */
+  /* SFX mute button */
   #muteBtn {
     position: fixed; top: 12px; right: 12px; z-index: 800;
     background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
@@ -453,6 +449,18 @@
   }
   #muteBtn.show { display: block; }
   #muteBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Music toggle button — sits left of SFX button */
+  #musicBtn {
+    position: fixed; top: 12px; right: 110px; z-index: 800;
+    background: #0a1520; border: 1px solid var(--correct); color: var(--correct);
+    padding: 6px 10px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    cursor: pointer; transition: all 0.2s; display: none;
+    -webkit-tap-highlight-color: transparent; letter-spacing: 0.05em;
+  }
+  #musicBtn.show { display: block; }
+  #musicBtn:hover { box-shadow: 0 0 8px #00ff9d66; }
+  #musicBtn.muted { border-color: var(--dim); color: var(--dim); }
 
   /* Mobile D-pad */
   #dpad {
@@ -492,6 +500,10 @@
 
 <!-- MUTE BUTTON -->
 <button id="muteBtn">SOUND ON</button>
+
+<!-- Background music -->
+<audio id="bgMusic" src="classical-music.mp3" loop preload="auto"></audio>
+<button id="musicBtn" title="Toggle Music">♪ MUSIC ON</button>
 
 <!-- START SCREEN -->
 <div class="screen" id="startScreen">
@@ -711,33 +723,46 @@
 <div class="notif" id="notif"></div>
 
 <script>
-// ── MATRIX RAIN ──────────────────────────────────────
-(function() {
-  var mc = document.getElementById('matrixCanvas');
-  var mx = mc.getContext('2d');
+// ── MATRIX RAIN (drawn on gameCanvas, maze area only) ────────────
+// State lives here; drawMatrixRain() is called each frame inside drawMaze()
+var matrixRain = (function() {
   var CHARS = '01VOIBLOCKCHAIN{}[]<>/\\|=+*#@!?';
-  var cols, drops;
-  function resize() {
-    mc.width  = window.innerWidth;
-    mc.height = window.innerHeight;
-    cols  = Math.floor(mc.width / 18);
-    drops = Array.from({ length: cols }, function(){ return Math.random() * -60; });
+  var cols = 0, drops = [];
+  var active = false;
+  var colW = 14; // px per column on the game canvas
+
+  function init(canvasW) {
+    cols  = Math.floor(canvasW / colW);
+    drops = Array.from({ length: cols }, function() { return Math.random() * -40; });
   }
-  resize();
-  window.addEventListener('resize', resize);
-  setInterval(function() {
-    mx.fillStyle = 'rgba(5,10,15,0.06)';
-    mx.fillRect(0, 0, mc.width, mc.height);
-    mx.font = '13px monospace';
+  function draw(ctx, canvasW, canvasH) {
+    if (!active) return;
+    // Very light fade — keeps characters ghost-like behind maze
+    ctx.save();
+    ctx.fillStyle = 'rgba(5,10,15,0.04)';
+    ctx.fillRect(0, 0, canvasW, canvasH);
+    ctx.font = '11px monospace';
     for (var i = 0; i < cols; i++) {
       var ch = CHARS[Math.floor(Math.random() * CHARS.length)];
-      mx.fillStyle = (i % 3 === 0) ? 'rgba(0,245,255,0.45)' : 'rgba(0,255,157,0.35)';
-      mx.fillText(ch, i * 18, drops[i] * 18);
-      if (drops[i] * 18 > mc.height && Math.random() > 0.975) drops[i] = 0;
-      drops[i] += 0.55;
+      // Alternate cyan / green, very low opacity so maze shows clearly
+      ctx.fillStyle = (i % 3 === 0) ? 'rgba(0,245,255,0.18)' : 'rgba(0,255,157,0.13)';
+      ctx.fillText(ch, i * colW, drops[i] * colW);
+      if (drops[i] * colW > canvasH && Math.random() > 0.97) drops[i] = 0;
+      drops[i] += 0.45;
     }
-  }, 50);
+    ctx.restore();
+  }
+  return {
+    init: init,
+    draw: draw,
+    show: function() { active = true; },
+    hide: function() { active = false; }
+  };
 })();
+
+// Expose show/hide for showScreen() calls
+window.showMatrix = function() { matrixRain.show(); };
+window.hideMatrix = function() { matrixRain.hide(); };
 
 // ── BG MAZE ANIMATION (start screen) ─────────────────
 var bgMazeTimer = null;
@@ -1273,6 +1298,8 @@ function resizeCanvas() {
   canvas.width = dw; canvas.height = dh;
   canvas.style.width = (dw*scale)+'px';
   canvas.style.height = (dh*scale)+'px';
+  // Reinitialise matrix rain columns to match canvas width
+  if (typeof matrixRain !== 'undefined') matrixRain.init(dw);
 }
 
 // â”€â”€ DRAWING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1294,6 +1321,8 @@ function getStoneOffsets(key) {
 function drawMaze() {
   ctx.fillStyle = '#020609';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Draw matrix rain as subtle background layer (confined to this canvas)
+  matrixRain.draw(ctx, canvas.width, canvas.height);
 
   const walls = state.maze;
   const vis = state.visibleCells;
@@ -2063,12 +2092,22 @@ function showScreen(name) {
   const el = document.getElementById(name+'Screen');
   if(el) el.classList.remove('hidden');
   state.screen = name;
+  // Matrix rain: only during gameplay
+  if(typeof showMatrix==='function') { if(name==='game') showMatrix(); else hideMatrix(); }
   // Start/stop bg maze animation
   if(name==='start') startBgMaze();
   else stopBgMaze();
   // Show partner buttons only during gameplay
   const gpb = document.getElementById('gamePartnerBtns');
   if(gpb) gpb.classList.toggle('show', name==='game');
+  // Music button visibility + music control
+  const mb = document.getElementById('musicBtn');
+  if(mb) mb.classList.toggle('show', name==='game');
+  if(name === 'game') {
+    if(typeof startGameMusic === 'function') startGameMusic();
+  } else {
+    if(typeof stopGameMusic === 'function') stopGameMusic();
+  }
 }
 
 // â”€â”€ CHARACTER PREVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2211,6 +2250,67 @@ window.addEventListener('resize', () => { if(state.screen==='game') resizeCanvas
   await loadQuestions();
   await initFirebase();
 })();
+
+// ── MUSIC ENGINE ─────────────────────────────────────
+(function() {
+  var bgMusic = document.getElementById('bgMusic');
+  var musicMuted = false;
+  var musicStarted = false;
+  var fadeTimer = null;
+
+  function fadeIn(target) {
+    if (!bgMusic) return;
+    if (fadeTimer) clearInterval(fadeTimer);
+    bgMusic.volume = 0;
+    bgMusic.play().catch(function(){});
+    fadeTimer = setInterval(function() {
+      var v = Math.min(bgMusic.volume + 0.025, target);
+      bgMusic.volume = v;
+      if (v >= target) { clearInterval(fadeTimer); fadeTimer = null; }
+    }, 80);
+  }
+
+  function fadeOut(cb) {
+    if (!bgMusic) return;
+    if (fadeTimer) clearInterval(fadeTimer);
+    fadeTimer = setInterval(function() {
+      var v = Math.max(bgMusic.volume - 0.03, 0);
+      bgMusic.volume = v;
+      if (v <= 0) {
+        bgMusic.pause();
+        clearInterval(fadeTimer); fadeTimer = null;
+        if (cb) cb();
+      }
+    }, 60);
+  }
+
+  window.startGameMusic = function() {
+    if (musicMuted) return;
+    if (bgMusic && (bgMusic.paused || !musicStarted)) {
+      musicStarted = true;
+      fadeIn(0.35);
+    }
+  };
+
+  window.stopGameMusic = function() {
+    if (bgMusic && !bgMusic.paused) fadeOut();
+  };
+
+  window.toggleMusic = function() {
+    musicMuted = !musicMuted;
+    var btn = document.getElementById('musicBtn');
+    if (musicMuted) {
+      fadeOut();
+      if (btn) { btn.textContent = '♪ MUSIC OFF'; btn.classList.add('muted'); }
+    } else {
+      fadeIn(0.35);
+      if (btn) { btn.textContent = '♪ MUSIC ON'; btn.classList.remove('muted'); }
+    }
+  };
+
+  document.getElementById('musicBtn').addEventListener('click', window.toggleMusic);
+})();
+
 </script>
 </body>
 </html>
