@@ -469,6 +469,11 @@
     z-index: 800;
     display: flex; flex-direction: column; gap: 6px;
     align-items: flex-start;
+    /* Only the visible child elements catch pointer events, not the transparent gap */
+    pointer-events: none;
+  }
+  #topLeftCluster > *, #topLeftCluster * {
+    pointer-events: auto;
   }
 
   /* Links dropdown button */
@@ -2787,6 +2792,7 @@ canvas.addEventListener('touchend', e => {
     // Short tap = sword attack toward tapped cell
     handleCanvasAttack(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
     touchStart = null;
+    e.stopPropagation();
     e.preventDefault();
     return;
   }
@@ -2802,6 +2808,7 @@ canvas.addEventListener('touchend', e => {
 // Mouse click on canvas = sword attack
 canvas.addEventListener('click', e => {
   if (state.screen !== 'game') return;
+  e.stopPropagation(); // don't bubble to document (avoids dropdown interference)
   handleCanvasAttack(e.clientX, e.clientY);
 });
 
@@ -3159,11 +3166,19 @@ async function animateLoadBar() {
     btn.classList.toggle('open', open);
   });
 
-  // Close when clicking anywhere else
-  document.addEventListener('click', function() {
-    menu.classList.remove('open');
-    btn.classList.remove('open');
+  // Close when clicking anywhere else (use mousedown so it doesn't race with canvas click)
+  document.addEventListener('mousedown', function(e) {
+    if (!btn.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.remove('open');
+      btn.classList.remove('open');
+    }
   });
+  document.addEventListener('touchstart', function(e) {
+    if (!btn.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.remove('open');
+      btn.classList.remove('open');
+    }
+  }, {passive:true});
 
   // Prevent menu clicks from closing immediately
   menu.addEventListener('click', function(e) { e.stopPropagation(); });
