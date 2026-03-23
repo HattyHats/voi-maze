@@ -5,36 +5,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>VOI MAZE - Blockchain Learning Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
-
-:root {
-–bg: #050a0f;
-–panel: #080f17;
-–border: #0ff3;
-–accent: #00f5ff;
-–accent2: #7b00ff;
-–accent3: #ff006e;
-–warn: #ffb800;
-–correct: #00ff9d;
-–wrong: #ff3860;
-–text: #c8e0f0;
-–dim: #4a6878;
-–glow: 0 0 12px #00f5ff88, 0 0 30px #00f5ff33;
-–glow2: 0 0 12px #7b00ff88;
-–pu-freeze: #00cfff;
-–pu-hint: #ffe600;
-–pu-boost: #ff6b35;
-–pu-reveal: #b400ff;
-}
+  :root {
+    --bg: #050a0f;
+    --panel: #080f17;
+    --border: #0ff3;
+    --accent: #00f5ff;
+    --accent2: #7b00ff;
+    --accent3: #ff006e;
+    --warn: #ffb800;
+    --correct: #00ff9d;
+    --wrong: #ff3860;
+    --text: #c8e0f0;
+    --dim: #4a6878;
+    --glow: 0 0 12px #00f5ff88, 0 0 30px #00f5ff33;
+    --glow2: 0 0 12px #7b00ff88;
+    --pu-freeze: #00cfff;
+    --pu-hint: #ffe600;
+    --pu-boost: #ff6b35;
+    --pu-reveal: #b400ff;
+  }
 
 - { box-sizing: border-box; margin: 0; padding: 0; }
 
+html { height: 100%; background: #050a0f; }
+
 body {
+background: #050a0f;
 background: var(–bg);
+color: #c8e0f0;
 color: var(–text);
 font-family: ‘Rajdhani’, sans-serif;
-min-height: 100vh;
+height: 100%;
 overflow: hidden;
 position: relative;
 }
@@ -216,14 +221,14 @@ margin: 4px 0; opacity: 0.4;
 /* â”€â”€â”€ GAME SCREEN â”€â”€â”€ */
 #gameScreen {
 flex-direction: row; align-items: stretch; justify-content: flex-start;
-background: var(–bg); padding: 0; overflow: hidden;
+background: #050a0f; background: var(–bg); padding: 0; overflow: hidden;
 }
 #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; cursor: crosshair; }
 
 /* â”€â”€â”€ HUD â”€â”€â”€ */
 /* ─── HUD — compact, no scroll, fits 100vh ─── */
 .hud {
-width: 255px; min-width: 195px; background: var(–panel);
+width: 255px; min-width: 195px; background: #080f17; background: var(–panel);
 border-left: 1px solid var(–border);
 display: flex; flex-direction: column;
 padding: 5px 7px; gap: 3px;
@@ -564,7 +569,7 @@ user-select: none; transition: background 0.1s;
   overflow: hidden;
   height: 100vh;
   width: 100vw;
-  background: var(--bg);
+  background: #050a0f; background: var(--bg);
 }
 
 /* Canvas area gets 55% of screen height */
@@ -577,7 +582,7 @@ user-select: none; transition: background 0.1s;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
+  background: #050a0f; background: var(--bg);
   overflow: hidden;
 }
 
@@ -589,7 +594,7 @@ user-select: none; transition: background 0.1s;
   overflow-y: auto; overflow-x: hidden;
   padding: 4px 8px; gap: 3px;
   box-sizing: border-box; flex-shrink: 0;
-  background: var(--panel); /* force dark bg */
+  background: #080f17; background: var(--panel); /* force dark bg */
 }
 
 /* Desktop question panel hidden — mobile uses overlay */
@@ -1688,13 +1693,14 @@ const miniCtx = miniMapCanvas.getContext('2d');
 
 function resizeCanvas() {
   const wrapper = document.getElementById('canvasWrapper');
-  const maxW = wrapper.clientWidth, maxH = wrapper.clientHeight;
+  // On mobile the wrapper may not have computed size yet — use screen as fallback
+  const maxW = wrapper.clientWidth  || (window.innerWidth  * (window.innerWidth <= 720 ? 1.0 : 0.7));
+  const maxH = wrapper.clientHeight || (window.innerHeight * (window.innerWidth <= 720 ? 0.55 : 1.0));
   const dw = MAZE_W*CELL+2, dh = MAZE_H*CELL+2;
   const scale = Math.min(maxW/dw, maxH/dh, 1);
   canvas.width = dw; canvas.height = dh;
-  canvas.style.width = (dw*scale)+'px';
-  canvas.style.height = (dh*scale)+'px';
-  // Reinitialise matrix rain columns to match canvas width
+  canvas.style.width  = Math.floor(dw*scale)+'px';
+  canvas.style.height = Math.floor(dh*scale)+'px';
   if (typeof matrixRain !== 'undefined') matrixRain.init(dw);
 }
 
@@ -2679,6 +2685,8 @@ function gameLoop() {
 
   showScreen('game');
   resizeCanvas();
+  // On mobile, re-run resize after layout settles
+  setTimeout(resizeCanvas, 80);
   buildNodeChecklist();
   startTimer();
   if (state.animFrame) cancelAnimationFrame(state.animFrame);
