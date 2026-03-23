@@ -2,5 +2,5 @@ Welcom to Voi-Maze! Learn about Voi and see who can answer and beat the maze the
 
 Music by: Ievgen Poltavskyi On Pixabay
 
-edits in progress - game moght be weird on mobile right now
+edits in progress - game might be weird on mobile right now
 fixing very soon
