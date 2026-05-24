@@ -10,18 +10,19 @@
 <style>
   :root {
     --bg: #050a0f;
-    --panel: #080f17;
-    --border: #0ff3;
+    --panel: rgba(8, 15, 23, 0.65);
+    --panel-border: rgba(0, 245, 255, 0.2);
+    --border: rgba(0, 245, 255, 0.3);
     --accent: #00f5ff;
     --accent2: #7b00ff;
     --accent3: #ff006e;
     --warn: #ffb800;
     --correct: #00ff9d;
     --wrong: #ff3860;
-    --text: #c8e0f0;
-    --dim: #4a6878;
-    --glow: 0 0 12px #00f5ff88, 0 0 30px #00f5ff33;
-    --glow2: 0 0 12px #7b00ff88;
+    --text: #e0f0ff;
+    --dim: #6b8a9e;
+    --glow: 0 0 16px rgba(0, 245, 255, 0.6), 0 0 32px rgba(0, 245, 255, 0.2);
+    --glow2: 0 0 16px rgba(123, 0, 255, 0.6);
     --pu-freeze: #00cfff;
     --pu-hint: #ffe600;
     --pu-boost: #ff6b35;
@@ -166,50 +167,55 @@
   }
   .cyber-input {
     width: 100%;
-    background: #0a1520;
+    background: rgba(10, 21, 32, 0.7);
     border: 1px solid var(--accent);
     color: var(--accent);
-    padding: 12px 16px;
+    padding: 14px 18px;
     font-family: 'Share Tech Mono', monospace;
-    font-size: 15px;
+    font-size: 16px;
+    border-radius: 4px;
     outline: none;
-    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.3s, border-color 0.3s;
   }
   .cyber-input:focus { box-shadow: var(--glow); }
   .cyber-input::placeholder { color: var(--dim); }
 
   .difficulty-row { display: flex; gap: 8px; width: 100%; }
   .diff-btn {
-    flex: 1; background: #0a1520; border: 1px solid var(--dim);
-    color: var(--dim); padding: 8px 4px;
-    font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    letter-spacing: 0.15em; cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+    flex: 1; background: rgba(10, 21, 32, 0.7); border: 1px solid var(--dim);
+    color: var(--dim); padding: 10px 4px;
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    letter-spacing: 0.15em; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase;
+    border-radius: 4px;
   }
-  .diff-btn.active-easy { border-color: var(--correct); color: var(--correct); background: #001a0d; box-shadow: 0 0 8px #00ff9d44; }
-  .diff-btn.active-normal { border-color: var(--accent); color: var(--accent); background: #00141a; box-shadow: 0 0 8px #00f5ff44; }
-  .diff-btn.active-hard { border-color: var(--wrong); color: var(--wrong); background: #1a0005; box-shadow: 0 0 8px #ff386044; }
+  .diff-btn:hover { background: rgba(13, 31, 48, 0.9); border-color: var(--text); color: var(--text); }
+  .diff-btn.active-easy { border-color: var(--correct); color: var(--correct); background: rgba(0, 26, 13, 0.8); box-shadow: 0 0 12px rgba(0,255,157,0.3); }
+  .diff-btn.active-normal { border-color: var(--accent); color: var(--accent); background: rgba(0, 20, 26, 0.8); box-shadow: 0 0 12px rgba(0,245,255,0.3); }
+  .diff-btn.active-hard { border-color: var(--wrong); color: var(--wrong); background: rgba(26, 0, 5, 0.8); box-shadow: 0 0 12px rgba(255,56,96,0.3); }
 
   .cyber-btn {
-    width: 100%; background: transparent;
+    width: 100%; background: rgba(0, 245, 255, 0.05);
     border: 1px solid var(--accent); color: var(--accent);
-    padding: 13px 24px;
-    font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+    padding: 14px 24px;
+    font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700;
     letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer;
-    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
-    transition: all 0.2s; position: relative; overflow: hidden;
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative; overflow: hidden;
+    box-shadow: inset 0 0 10px rgba(0,245,255,0.05);
   }
   .cyber-btn::before {
     content: ''; position: absolute; inset: 0; background: var(--accent);
-    transform: scaleX(0); transform-origin: left; transition: transform 0.2s; z-index: -1;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: -1;
   }
-  .cyber-btn:hover { color: var(--bg); box-shadow: var(--glow); }
-  .cyber-btn:hover::before { transform: scaleX(1); }
-  .cyber-btn.secondary { border-color: var(--accent2); color: var(--accent2); }
+  .cyber-btn:hover { color: var(--bg); box-shadow: 0 0 20px rgba(0,245,255,0.4); border-color: var(--accent); }
+  .cyber-btn:hover::before { transform: translateY(0); }
+  .cyber-btn.secondary { border-color: var(--accent2); color: var(--accent2); background: rgba(123, 0, 255, 0.05); box-shadow: inset 0 0 10px rgba(123,0,255,0.05); }
   .cyber-btn.secondary::before { background: var(--accent2); }
-  .cyber-btn.secondary:hover { box-shadow: var(--glow2); }
-  .cyber-btn.danger { border-color: var(--wrong); color: var(--wrong); }
+  .cyber-btn.secondary:hover { box-shadow: 0 0 20px rgba(123,0,255,0.4); border-color: var(--accent2); color: #fff; }
+  .cyber-btn.danger { border-color: var(--wrong); color: var(--wrong); background: rgba(255, 56, 96, 0.05); box-shadow: inset 0 0 10px rgba(255,56,96,0.05); }
   .cyber-btn.danger::before { background: var(--wrong); }
+  .cyber-btn.danger:hover { box-shadow: 0 0 20px rgba(255,56,96,0.4); border-color: var(--wrong); color: #fff; }
 
   .divider {
     width: 100%; height: 1px;
@@ -220,23 +226,29 @@
   /* â”€â”€â”€ GAME SCREEN â”€â”€â”€ */
   #gameScreen {
     flex-direction: row; align-items: stretch; justify-content: flex-start;
-    background: #050a0f; background: var(--bg); padding: 0; overflow: hidden;
+    background: #050a0f; background: var(--bg); padding: 0; overflow: hidden; position: relative;
     /* position:fixed+inset:0 from .screen gives us 100vh — children stretch to fill */
+  }
+  #gameScreen::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 15;
+    background: radial-gradient(circle at center, transparent 30%, rgba(2, 6, 9, 0.7) 120%);
   }
   #gameCanvas { display: block; image-rendering: pixelated; flex-shrink: 0; cursor: crosshair; }
 
   /* â”€â”€â”€ HUD â”€â”€â”€ */
     /* ─── HUD — compact, no scroll, fits 100vh ─── */
   .hud {
-    width: 255px; min-width: 195px; background: #080f17; background: var(--panel);
-    border-left: 1px solid var(--border);
+    width: 265px; min-width: 210px; background: var(--panel);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     display: flex; flex-direction: column;
-    padding: 5px 7px; gap: 3px;
-    overflow: hidden; flex-shrink: 0;
+    padding: 10px 14px; gap: 8px;
+    overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
     /* Fill full height via parent flex container, not hardcoded 100vh */
     align-self: stretch;
     box-sizing: border-box;
   }
+  .hud.left-panel { border-right: 1px solid var(--panel-border); border-left: none; }
+  .hud.right-panel { border-left: 1px solid var(--panel-border); border-right: none; width: 320px; min-width: 280px; }
   .hud-label {
     font-family: 'Share Tech Mono', monospace; font-size: 8px;
     color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1px;
@@ -297,28 +309,39 @@
   .pu-reveal { color: var(--pu-reveal); }
 
   .question-panel {
-    background: #080f17; border: 1px solid var(--accent); padding: 6px; flex: 1;
-    display: flex; flex-direction: column; gap: 4px;
-    box-shadow: inset 0 0 12px #00f5ff08; min-height: 0; overflow: hidden;
+    background: transparent; border: none; padding: 0; flex: 1;
+    display: flex; flex-direction: column; gap: 8px;
+    box-shadow: none; min-height: 0; overflow-y: visible;
   }
   .question-text {
-    font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600;
-    color: var(--text); line-height: 1.35; min-height: 0;
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600;
+    color: var(--text); line-height: 1.4; flex-shrink: 0;
   }
   .answer-btn {
-    width: 100%; background: #0a1520; border: 1px solid var(--dim); color: var(--text);
-    padding: 4px 6px; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600;
-    text-align: left; cursor: pointer; transition: all 0.12s;
-    display: flex; gap: 5px; align-items: center;
+    width: 100%; background: rgba(10, 21, 32, 0.6); border: 1px solid var(--dim); color: var(--text);
+    padding: 7px 10px; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+    text-align: left; cursor: pointer; transition: all 0.2s ease;
+    display: flex; gap: 8px; align-items: center; min-height: fit-content;
+    border-radius: 4px; flex-shrink: 0;
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   }
-  .answer-btn:hover:not(:disabled) { border-color: var(--accent); background: #0d1f30; color: var(--accent); }
+  .answer-btn:hover:not(:disabled) { 
+    border-color: var(--accent); background: rgba(13, 31, 48, 0.8); 
+    color: var(--accent); transform: translateX(4px); 
+    box-shadow: 0 4px 12px rgba(0, 245, 255, 0.15);
+  }
   .answer-btn:active:not(:disabled) { transform: scale(0.98); }
-  .answer-btn.correct { border-color: var(--correct); background: #001a0d; color: var(--correct); }
-  .answer-btn.wrong   { border-color: var(--wrong);   background: #1a0005; color: var(--wrong);   }
+  .answer-btn.correct { border-color: var(--correct); background: rgba(0, 26, 13, 0.8); color: var(--correct); box-shadow: 0 0 12px rgba(0,255,157,0.3); }
+  .answer-btn.wrong   { border-color: var(--wrong);   background: rgba(26, 0, 5, 0.8); color: var(--wrong); box-shadow: 0 0 12px rgba(255,56,96,0.3); }
   .answer-btn.eliminated { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
   .answer-btn:disabled { cursor: default; }
   .answer-key { font-family: 'Share Tech Mono', monospace; color: var(--accent2); flex-shrink: 0; font-size: 9px; }
+
+  #answersContainer, #qOverlayAnswers { 
+    display: flex; flex-direction: column; gap: 6px; 
+    overflow-y: auto; min-height: 0; flex-shrink: 1; 
+    padding-right: 4px; margin-top: 4px;
+  }
 
   .feedback-msg {
     font-family: 'Share Tech Mono', monospace; font-size: 9px; text-align: center;
@@ -335,15 +358,18 @@
 
   /* Mobile overlay */
   .q-overlay {
-    position: fixed; inset: 0; background: #050a0fee;
+    position: fixed; inset: 0; background: rgba(5, 10, 15, 0.8);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     z-index: 500; display: none;
     align-items: center; justify-content: center; padding: 16px;
   }
   .q-overlay.show { display: flex; }
   .q-card {
     background: var(--panel); border: 1px solid var(--accent);
-    max-width: 500px; width: 100%; padding: 14px; box-shadow: var(--glow);
-    display: flex; flex-direction: column; gap: 8px;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-radius: 8px;
+    max-width: 500px; width: 100%; padding: 20px; box-shadow: var(--glow);
+    display: flex; flex-direction: column; gap: 12px;
     max-height: 88vh; overflow-y: auto;
   }
 
@@ -352,10 +378,12 @@
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     z-index: 600; background: var(--panel);
-    border: 2px solid var(--warn); padding: 20px 28px; text-align: center;
-    box-shadow: 0 0 30px #ffb80066;
-    display: none; flex-direction: column; gap: 10px;
-    animation: popIn 0.3s ease;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-radius: 8px;
+    border: 1px solid var(--warn); padding: 24px 32px; text-align: center;
+    box-shadow: 0 0 40px rgba(255, 184, 0, 0.3);
+    display: none; flex-direction: column; gap: 12px;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
   .pu-popup.show { display: flex; }
   @keyframes popIn {
@@ -368,21 +396,29 @@
 
   /* Finish screen */
   #finishScreen {
-    background: radial-gradient(ellipse at 50% 40%, #0d1a0d 0%, #050a0f 70%);
-    gap: 10px; padding: 16px;
+    background: radial-gradient(ellipse at 50% 40%, rgba(13, 26, 13, 0.9) 0%, rgba(5, 10, 15, 0.95) 70%);
+    gap: 14px; padding: 24px;
     justify-content: flex-start; overflow-y: auto;
   }
   .finish-title {
     font-family: 'Orbitron', monospace;
-    font-size: clamp(28px, 6vw, 56px); font-weight: 900;
-    color: var(--correct); text-shadow: 0 0 20px var(--correct); text-align: center;
+    font-size: clamp(32px, 7vw, 64px); font-weight: 900;
+    color: var(--correct); text-shadow: 0 0 30px rgba(0,255,157,0.6); text-align: center;
   }
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: min(680px, 90vw); }
-  .stat-card { background: var(--panel); border: 1px solid var(--border); padding: 12px; text-align: center; }
-  .stat-val { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: var(--accent); text-shadow: var(--glow); }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: min(680px, 90vw); }
+  .stat-card { 
+    background: var(--panel); border: 1px solid var(--panel-border); padding: 16px; text-align: center; 
+    border-radius: 8px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .stat-val { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 700; color: var(--accent); text-shadow: var(--glow); margin-top: 6px; }
 
   /* Leaderboard */
-  .leaderboard { width: min(680px, 90vw); background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+  .leaderboard { 
+    width: min(680px, 90vw); background: var(--panel); border: 1px solid var(--panel-border); overflow: hidden; 
+    border-radius: 8px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
   .lb-header {
     background: #0a1520; padding: 8px 14px;
     font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 0.3em; color: var(--dim);
@@ -548,18 +584,20 @@
   /* Mobile D-pad */
   #dpad {
     position: fixed; bottom: 20px; right: 16px;
-    display: none; grid-template-columns: 48px 48px 48px;
-    grid-template-rows: 48px 48px 48px; gap: 4px; z-index: 200;
+    display: none; grid-template-columns: 56px 56px 56px;
+    grid-template-rows: 56px 56px 56px; gap: 6px; z-index: 200;
   }
   #dpad.show { display: grid; }
   .dpad-btn {
-    background: #080f1788; border: 1px solid #00f5ff55; color: #00f5ff;
-    font-size: 22px; cursor: pointer; border-radius: 6px;
+    background: rgba(8, 15, 23, 0.65); border: 1px solid rgba(0, 245, 255, 0.4); color: #00f5ff;
+    font-size: 26px; cursor: pointer; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 245, 255, 0.1);
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-    user-select: none; transition: background 0.1s;
+    user-select: none; transition: all 0.2s ease;
   }
-  .dpad-btn:active { background: #00f5ff22; }
+  .dpad-btn:active { background: rgba(0, 245, 255, 0.2); transform: scale(0.95); }
 
   /* ── MOBILE: phones up to 720px ── */
   @media (max-width: 720px) {
@@ -610,6 +648,7 @@
 
     /* Desktop question panel hidden — mobile uses overlay */
     .question-panel { display: none !important; }
+    #hudRight { display: none !important; }
     .q-overlay { display: none; }
     .q-overlay.show { display: flex; }
 
@@ -686,32 +725,47 @@
   /* ═══════════════ SPLASH SCREEN ═══════════════ */
   #splashScreen {
     position: fixed; inset: 0; z-index: 2000;
-    background: #020609;
+    background: linear-gradient(135deg, #020609, #0a1128, #00121a, #050a0f);
+    background-size: 400% 400%;
+    animation: splashGradient 15s ease infinite;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     gap: 0;
     overflow: hidden;
     transition: opacity 0.8s ease;
   }
+  @keyframes splashGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
   #splashScreen.fade-out { opacity: 0; pointer-events: none; }
   #splashScreen.gone { display: none; }
 
+  .splash-char-container { 
+    position: relative; display: flex; justify-content: center; align-items: center; 
+    margin-bottom: 20px; width: 320px; height: 350px; flex-shrink: 0;
+  }
+  .splash-maze-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
+    filter: blur(5px) brightness(0.6); opacity: 0; transition: opacity 2s ease;
+  }
+  #splashScreen:not(.fade-out) .splash-maze-bg { opacity: 0.8; }
+
   /* Big faded character behind everything */
   #splashChar {
-    position: absolute;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     image-rendering: pixelated;
     opacity: 0;
-    filter: drop-shadow(0 0 40px #00f5ff55) drop-shadow(0 0 80px #7b00ff33);
+    filter: drop-shadow(0 0 40px rgba(0, 245, 255, 0.3)) drop-shadow(0 0 80px rgba(123, 0, 255, 0.2));
     animation: splashCharFloat 3.5s ease-in-out infinite;
     transition: opacity 1.2s ease;
-    z-index: 0;
+    z-index: 1;
   }
-  #splashChar.visible { opacity: 0.18; }
+  #splashChar.visible { opacity: 0.45; }
   @keyframes splashCharFloat {
-    0%,100% { transform: translateX(-50%) translateY(0px); }
-    50%      { transform: translateX(-50%) translateY(-22px); }
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-22px); }
   }
 
   /* Text layers */
@@ -739,12 +793,17 @@
     font-family: 'Orbitron', monospace;
     font-size: clamp(52px, 12vw, 120px);
     font-weight: 900;
-    letter-spacing: 0.1em;
-    color: #00f5ff;
-    text-shadow: 0 0 30px #00f5ffaa, 0 0 80px #00f5ff44, 0 0 120px #00f5ff22;
+    letter-spacing: 0.15em;
+    color: #ffffff;
+    -webkit-text-stroke: 2px rgba(0, 245, 255, 0.8);
+    text-shadow: 
+      0 0 20px rgba(0, 245, 255, 0.8),
+      4px 4px 0 #005f73, 
+      8px 8px 0 #0a9396,
+      0 0 50px rgba(0, 245, 255, 0.6);
     opacity: 0;
     transform: translateY(22px) scale(0.92);
-    transition: opacity 1.1s ease, transform 1.1s ease;
+    transition: opacity 1.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 1.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     line-height: 1;
   }
   .splash-title.in { opacity: 1; transform: translateY(0) scale(1); }
@@ -848,8 +907,10 @@
 
 <!-- ═══════════ SPLASH SCREEN ═══════════ -->
 <div id="splashScreen">
-  <!-- Big faded character -->
-  <canvas id="splashChar" width="320" height="400"></canvas>
+  <canvas id="splashMazeCanvas" class="splash-maze-bg"></canvas>
+  <div class="splash-char-container">
+    <canvas id="splashChar" width="320" height="400"></canvas>
+  </div>
 
   <div class="splash-text-wrap">
     <div class="splash-welcome" id="splashWelcome">Welcome To:</div>
@@ -942,10 +1003,7 @@
 
 <!-- GAME SCREEN -->
 <div class="screen hidden" id="gameScreen">
-  <div id="canvasWrapper">
-    <canvas id="gameCanvas"></canvas>
-  </div>
-  <div class="hud">
+  <div class="hud left-panel" id="hudLeft">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;">
       <div>
         <div class="hud-label">OPERATIVE</div>
@@ -1008,6 +1066,13 @@
       <div class="hud-label">MINI MAP</div>
       <canvas id="miniMap"></canvas>
     </div>
+  </div>
+
+  <div id="canvasWrapper">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <div class="hud right-panel" id="hudRight">
     <div class="question-panel" id="questionPanel">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div class="hud-label">ACTIVE CHALLENGE</div>
@@ -1185,11 +1250,11 @@ var matrixRain = (function() {
 window.showMatrix = function() { matrixRain.show(); };
 window.hideMatrix = function() { matrixRain.hide(); };
 
-// ── BG MAZE ANIMATION (start screen) ─────────────────
+// ── BG MAZE ANIMATION (start & splash screen) ─────────────────
 var bgMazeTimer = null;
-function startBgMaze() {
-  stopBgMaze();
-  var bc = document.getElementById('bgMazeCanvas');
+function startBgMaze(cid = 'bgMazeCanvas') {
+  stopBgMaze(cid);
+  var bc = document.getElementById(cid);
   if (!bc) return;
   bc.width  = bc.parentElement.offsetWidth  || window.innerWidth;
   bc.height = bc.parentElement.offsetHeight || window.innerHeight;
@@ -1260,9 +1325,9 @@ function startBgMaze() {
     drawBg();
   },85);
 }
-function stopBgMaze(){
+function stopBgMaze(cid = 'bgMazeCanvas'){
   if(bgMazeTimer){clearInterval(bgMazeTimer);bgMazeTimer=null;}
-  var bc=document.getElementById('bgMazeCanvas');
+  var bc=document.getElementById(cid);
   if(bc){bc.getContext('2d').clearRect(0,0,bc.width,bc.height);}
 }
 
@@ -1757,23 +1822,42 @@ function drawMaze() {
     }
   }
 
+  // ── HIGH-TECH GRID ───────────────────────────────────────────────────
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 245, 255, 0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 0; x <= canvas.width; x += CELL) {
+    ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+  }
+  for (let y = 0; y <= canvas.height; y += CELL) {
+    ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+
   // ── PLAYER LIGHT — one radial gradient ────────────────────────────
   const ppx = state.player.x*CELL+CELL/2+1;
   const ppy = state.player.y*CELL+CELL/2+1;
   const lr  = CELL * 2.5;
   const lg  = ctx.createRadialGradient(ppx, ppy, 0, ppx, ppy, lr);
-  lg.addColorStop(0, state.frozen ? '#00cfff18' : '#00f5ff12');
+  lg.addColorStop(0, state.frozen ? '#00cfff22' : '#00f5ff22');
+  lg.addColorStop(0.5, state.frozen ? '#00cfff08' : '#00f5ff08');
   lg.addColorStop(1, 'transparent');
   ctx.fillStyle = lg;
   ctx.fillRect(Math.max(0,ppx-lr), Math.max(0,ppy-lr), lr*2, lr*2);
 
-  // ── WALLS — single batched path, ONE shadow call ───────────────────
-  const wallCol = state.frozen ? '#00cfff' : '#00f5ff';
+  // ── WALLS — 3D Beveled Look ──────────────────────────────────────────
+  const wallColOuter = state.frozen ? '#0088ff' : '#0088aa';
+  const wallColInner = state.frozen ? '#00ffff' : '#00f5ff';
   ctx.save();
-  ctx.shadowColor = wallCol;
-  ctx.shadowBlur  = 5;
-  ctx.strokeStyle = wallCol;
-  ctx.lineWidth   = 2;
+  ctx.shadowColor = wallColInner;
+  ctx.shadowBlur  = 16;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  ctx.strokeStyle = wallColOuter;
+  ctx.lineWidth   = 4;
   ctx.beginPath();
   for (let y = 0; y < MAZE_H; y++) {
     for (let x = 0; x < MAZE_W; x++) {
@@ -1787,6 +1871,10 @@ function drawMaze() {
     }
   }
   ctx.stroke();
+  
+  ctx.strokeStyle = wallColInner;
+  ctx.lineWidth   = 1.5;
+  ctx.stroke(); 
   ctx.restore();
 
   // ── POWER-UPS ──────────────────────────────────────────────────────
@@ -1795,15 +1883,18 @@ function drawMaze() {
     if (!vis.has(`${pu.x},${pu.y}`) && !fullReveal) continue;
     const px2  = pu.x*CELL+CELL/2+1, py2 = pu.y*CELL+CELL/2+1;
     const bob  = Math.sin(time*0.08+pu.x+pu.y)*2;
+    const pulseScale = 1 + Math.sin(time*0.1+pu.x)*0.15;
     const col  = PU_COLORS[pu.type];
     ctx.save();
+    ctx.translate(px2, py2+bob);
+    ctx.scale(pulseScale, pulseScale);
     ctx.shadowColor  = col;
-    ctx.shadowBlur   = 8;
+    ctx.shadowBlur   = 12;
     ctx.fillStyle    = col;
     ctx.font         = '14px serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(PU_ICONS[pu.type], px2, py2+bob);
+    ctx.fillText(PU_ICONS[pu.type], 0, 0);
     ctx.restore();
   }
 
@@ -1817,28 +1908,30 @@ function drawMaze() {
   }
 
   // ── QUESTION NODES — unanswered (one save/restore for group) ───────
-  ctx.save();
   for (const node of state.nodes) {
     if (node.answered) continue;
     if (!vis.has(`${node.x},${node.y}`) && !fullReveal) continue;
     const nx    = node.x*CELL+CELL/2+1, ny = node.y*CELL+CELL/2+1;
     const pulse = 0.75 + 0.25*Math.sin(time*0.07+node.x+node.y);
     const r     = 6*pulse;
+    const scaleFactor = 1 + Math.sin(time*0.15+node.x)*0.2;
+    ctx.save();
+    ctx.translate(nx, ny);
+    ctx.scale(scaleFactor, scaleFactor);
     ctx.shadowColor = '#7b00ff';
-    ctx.shadowBlur  = 10*pulse;
+    ctx.shadowBlur  = 14*pulse;
     ctx.fillStyle   = '#7b00ff';
-    ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI*2); ctx.fill();
-    // Rotating arc every other frame
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI*2); ctx.fill();
     if (time % 2 === 0) {
       ctx.shadowBlur  = 0;
       ctx.strokeStyle = '#7b00ff99';
       ctx.lineWidth   = 1.5;
       ctx.beginPath();
-      ctx.arc(nx, ny, r+3, time*0.03, time*0.03+Math.PI*1.2);
+      ctx.arc(0, 0, r+3, time*0.03, time*0.03+Math.PI*1.2);
       ctx.stroke();
     }
+    ctx.restore();
   }
-  ctx.restore();
 
   // ── EXIT PORTAL ────────────────────────────────────────────────────
   if (state.exit && (vis.has(`${state.exit.x},${state.exit.y}`) || fullReveal)) {
@@ -1887,7 +1980,7 @@ function drawPlayer() {
 
   // One glow setting for whole player
   ctx.shadowColor = state.boostActive ? '#ff6b35' : state.frozen ? '#00cfff' : '#00f5ff';
-  ctx.shadowBlur  = state.boostActive ? 18 : 8;
+  ctx.shadowBlur  = state.boostActive ? 24 : 14; // Increased player glow for a slicker look
 
   // Body (shirt - dark)
   ctx.fillStyle = state.boostActive ? '#4a1800' : '#1e2a3a';
@@ -3084,6 +3177,7 @@ function drawSplashChar() {
 
 async function runSplash() {
   drawSplashChar();
+  startBgMaze('splashMazeCanvas');
 
   // Animate character in
   setTimeout(() => {
@@ -3116,6 +3210,7 @@ async function runSplash() {
   if (splash) splash.classList.add('fade-out');
   await delay(850);
   if (splash) splash.classList.add('gone');
+  stopBgMaze('splashMazeCanvas');
 
   // Now show the actual start screen
   drawCharPreview();
