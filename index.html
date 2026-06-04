@@ -225,9 +225,8 @@
 
   /* â”€â”€â”€ GAME SCREEN â”€â”€â”€ */
   #gameScreen {
-    flex-direction: row; align-items: stretch; justify-content: flex-start;
-    background: #050a0f; background: var(--bg); padding: 0; overflow: hidden; position: relative;
-    /* position:fixed+inset:0 from .screen gives us 100vh — children stretch to fill */
+    display: block;
+    background: #050a0f; background: var(--bg); padding: 0; overflow: hidden;
   }
   #gameScreen::after {
     content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 15;
@@ -238,17 +237,18 @@
   /* â”€â”€â”€ HUD â”€â”€â”€ */
     /* ─── HUD — compact, no scroll, fits 100vh ─── */
   .hud {
-    width: 265px; min-width: 210px; background: var(--panel);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    position: absolute;
+    background: rgba(8, 15, 23, 0.4);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 245, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     display: flex; flex-direction: column;
-    padding: 10px 14px; gap: 8px;
-    overflow-y: auto; overflow-x: hidden; flex-shrink: 0;
-    /* Fill full height via parent flex container, not hardcoded 100vh */
-    align-self: stretch;
-    box-sizing: border-box;
+    padding: 16px; gap: 12px;
+    z-index: 100;
   }
-  .hud.left-panel { border-right: 1px solid var(--panel-border); border-left: none; }
-  .hud.right-panel { border-left: 1px solid var(--panel-border); border-right: none; width: 320px; min-width: 280px; }
+  .hud.left-panel { top: 20px; left: 20px; width: 280px; max-height: calc(100vh - 40px); overflow-y: auto; border: 1px solid var(--panel-border); }
+  .hud.right-panel { display: none; }
   .hud-label {
     font-family: 'Share Tech Mono', monospace; font-size: 8px;
     color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1px;
@@ -505,9 +505,13 @@
   #miniMap { width: 100%; height: 60px; border: 1px solid var(--border); background: #05080f; }
 
   #canvasWrapper {
-    flex: 1; overflow: hidden; display: flex;
-    align-items: center; justify-content: center;
-    background: var(--bg); min-width: 0; min-height: 0;
+    position: absolute; inset: 0; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    transition: filter 0.3s ease;
+  }
+  #canvasWrapper canvas {
+    width: 100%; height: 100%; object-fit: contain;
   }
 
   #lbScreen { gap: 14px; padding: 20px; background: radial-gradient(ellipse at 50% 20%, #0a0a1f, #050a0f); }
@@ -1338,7 +1342,7 @@ function stopBgMaze(cid = 'bgMazeCanvas'){
 
 // â”€â”€ FIREBASE CONFIG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FIREBASE_CONFIG = {
-  apiKey: "your-api-key-here",
+  apiKey: "AIzaSyC7_td3yRgthHXcY0eoAMyziGKbkKTNtYg",
   authDomain: "voi-maze.firebaseapp.com",
   databaseURL: "https://voi-maze-default-rtdb.firebaseio.com",
   projectId: "voi-maze",
@@ -2255,19 +2259,19 @@ const DIFF_CONFIG = {
 function showQuestion(qIdx) {
   const q = state.questions[qIdx];
   if (!q) return;
-  const isMobile = window.innerWidth<=720;
-  const textEl = isMobile ? document.getElementById('qOverlayText') : document.getElementById('questionText');
-  const ansEl  = isMobile ? document.getElementById('qOverlayAnswers') : document.getElementById('answersContainer');
-  const fbEl   = isMobile ? document.getElementById('qOverlayFeedback') : document.getElementById('feedbackMsg');
-  const factEl = isMobile ? document.getElementById('qOverlayFact') : document.getElementById('factBox');
+  const isMobile = true; 
+  const textEl = document.getElementById('qOverlayText');
+  const ansEl  = document.getElementById('qOverlayAnswers');
+  const fbEl   = document.getElementById('qOverlayFeedback');
+  const factEl = document.getElementById('qOverlayFact');
 
-    const total = state.questionCount || state.questions.length;
-    textEl.textContent = `[Q${qIdx+1}/${total}] ${q.q}`;
+  const total = state.questionCount || state.questions.length;
+  textEl.textContent = `[Q${qIdx+1}/${total}] ${q.q}`;
   fbEl.textContent = ''; fbEl.className = 'feedback-msg';
   factEl.textContent = ''; factEl.className = 'fact-box';
 
   const cat = CATEGORIES[q.category] || {label:q.category,color:'#00f5ff'};
-  const badgeEl = isMobile ? document.getElementById('qOverlayCatBadge') : document.getElementById('qCatBadge');
+  const badgeEl = document.getElementById('qOverlayCatBadge');
   if (badgeEl) { badgeEl.textContent=cat.label; badgeEl.style.color=cat.color; badgeEl.style.display='inline-block'; }
 
   const keys = ['A','B','C','D'];
@@ -2278,12 +2282,12 @@ function showQuestion(qIdx) {
     btn.innerHTML = `<span class="answer-key">${keys[i]}</span><span>${opt}</span>`;
     if (state.activeHintEliminated.includes(i)) btn.classList.add('eliminated');
     btn.addEventListener('click', () => handleAnswer(i, qIdx, btn, ansEl, fbEl, factEl, isMobile));
-    // Touch: prevent double-fire
     btn.addEventListener('touchend', (e) => { e.preventDefault(); handleAnswer(i, qIdx, btn, ansEl, fbEl, factEl, isMobile); });
     ansEl.appendChild(btn);
   });
 
-  if (isMobile) document.getElementById('qOverlay').classList.add('show');
+  document.getElementById('canvasWrapper').style.filter = 'blur(12px) brightness(0.6)';
+  document.getElementById('qOverlay').classList.add('show');
 }
 
 function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
@@ -2333,7 +2337,8 @@ function handleAnswer(chosen, qIdx, clickedBtn, ansEl, fbEl, factEl, isMobile) {
     state.activeNode.answered = true;
     state.questionActive = false;
     state.activeHintEliminated = [];
-    if (isMobile) document.getElementById('qOverlay').classList.remove('show');
+    document.getElementById('qOverlay').classList.remove('show');
+    document.getElementById('canvasWrapper').style.filter = 'none';
     const badgeEl = document.getElementById('qCatBadge');
     if (badgeEl) badgeEl.style.display = 'none';
     updateHUD();
