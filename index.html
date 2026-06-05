@@ -247,7 +247,7 @@
     padding: 16px; gap: 12px;
     z-index: 100;
   }
-  .hud.left-panel { top: 20px; left: 20px; width: 280px; max-height: calc(100vh - 40px); overflow-y: auto; border: 1px solid var(--panel-border); }
+  .hud.left-panel { top: 75px; left: 20px; width: 280px; max-height: calc(100vh - 95px); overflow-y: auto; border: 1px solid var(--panel-border); }
   .hud.right-panel { display: none; }
   .hud-label {
     font-family: 'Share Tech Mono', monospace; font-size: 8px;
@@ -530,16 +530,23 @@
     pointer-events: auto;
   }
 
-  /* Links dropdown button */
-  #linksBtn {
-    background: #0a1520; border: 1px solid var(--accent2); color: var(--accent2);
-    padding: 6px 12px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; gap: 6px;
+  /* Top Left Buttons */
+  #linksBtn, #infoBtn, #infoBtn, #muteBtn, #musicBtn {
+    background: rgba(10, 21, 32, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 245, 255, 0.3); color: var(--accent2);
+    padding: 8px 14px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
     -webkit-tap-highlight-color: transparent; letter-spacing: 0.1em;
-    white-space: nowrap; user-select: none;
+    white-space: nowrap; user-select: none; border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   }
-  #linksBtn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
+  #linksBtn:hover, #infoBtn:hover, #muteBtn:hover, #musicBtn:hover { 
+    border-color: var(--accent); color: var(--accent); 
+    box-shadow: 0 0 15px rgba(0, 245, 255, 0.4); 
+    background: rgba(10, 21, 32, 0.9);
+    transform: translateY(-1px);
+  }
   #linksBtn .arrow {
     display: inline-block; transition: transform 0.2s;
     font-size: 9px;
@@ -570,13 +577,6 @@
   /* Sound buttons row — sit below the links cluster */
   #soundBtns {
     display: flex; gap: 5px; align-items: center;
-  }
-  #muteBtn, #musicBtn {
-    background: #0a1520; border: 1px solid var(--dim); color: var(--dim);
-    padding: 5px 9px; font-family: 'Share Tech Mono', monospace; font-size: 10px;
-    cursor: pointer; transition: all 0.2s;
-    -webkit-tap-highlight-color: transparent; letter-spacing: 0.05em;
-    white-space: nowrap;
   }
   #muteBtn:hover  { border-color: var(--accent); color: var(--accent); }
   #musicBtn       { border-color: var(--correct); color: var(--correct); }
@@ -690,7 +690,7 @@
     }
     #linksBtn { font-size: 9px; padding: 4px 7px; }
     #linksMenu a { font-size: 9px; padding: 6px 10px; text-align: right; }
-    #muteBtn, #musicBtn { font-size: 8px; padding: 3px 5px; }
+    #infoBtn, #muteBtn, #musicBtn { font-size: 8px; padding: 3px 5px; }
 
     /* Partner buttons: bottom-center, clear of d-pad and combat buttons */
     #gamePartnerBtns {
@@ -752,21 +752,21 @@
   }
   .splash-maze-bg {
     position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
-    filter: blur(5px) brightness(0.6); opacity: 0; transition: opacity 2s ease;
+    opacity: 0; transition: opacity 5s ease, transform 15s linear;
   }
-  #splashScreen:not(.fade-out) .splash-maze-bg { opacity: 0.8; }
+  #splashScreen:not(.fade-out) .splash-maze-bg { opacity: 0.35; transform: scale(1.15) rotate(2deg); }
 
   /* Big faded character behind everything */
   #splashChar {
     position: relative;
     image-rendering: pixelated;
     opacity: 0;
-    filter: drop-shadow(0 0 40px rgba(0, 245, 255, 0.3)) drop-shadow(0 0 80px rgba(123, 0, 255, 0.2));
+    filter: drop-shadow(0 0 60px rgba(0, 245, 255, 0.9)) drop-shadow(0 0 100px rgba(123, 0, 255, 0.7));
     animation: splashCharFloat 3.5s ease-in-out infinite;
     transition: opacity 1.2s ease;
     z-index: 1;
   }
-  #splashChar.visible { opacity: 0.45; }
+  #splashChar.visible { opacity: 1; }
   @keyframes splashCharFloat {
     0%,100% { transform: translateY(0px); }
     50%      { transform: translateY(-22px); }
@@ -937,18 +937,18 @@
 
 <!-- TOP-LEFT CLUSTER: Links dropdown + sound buttons -->
 <div id="topLeftCluster">
-  <button id="linksBtn">&#9776; LINKS <span class="arrow">&#9660;</span></button>
+  <div style="display: flex; gap: 5px;">
+    <button id="linksBtn">&#9776; LINKS <span class="arrow">&#9660;</span></button>
+    <button id="infoBtn">&#8505; WHAT IS VOI?</button>
+  </div>
   <nav id="linksMenu">
     <a href="https://earnwithhatty.com/"                         target="_blank" rel="noopener">Learn With Hatty</a>
-    <a href="https://earn-with-hatty-tools.netlify.app/"         target="_blank" rel="noopener">Hatty's Tools</a>
-    <a href="https://hattys-media.netlify.app/"                  target="_blank" rel="noopener">Hatty's Media</a>
-    <a href="https://privacy-gadgets-hub.netlify.app/"           target="_blank" rel="noopener">Privacy Gadgets</a>
     <a href="https://hatty-universe.netlify.app/"                target="_blank" rel="noopener">Hatty's Universe</a>
     <a href="https://hattys-news.netlify.app/"                   target="_blank" rel="noopener">Hatty's News</a>
     <a href="https://hattyhats.github.io/Open-Focus/"            target="_blank" rel="noopener">Open Focus</a>
-    <a href="https://orbit-node.netlify.app/"                    target="_blank" rel="noopener">OrbitNode</a>
-    <a href="https://case-board.netlify.app/"                    target="_blank" rel="noopener">CaseBoard</a>
-    <a href="https://hattyhats.github.io/token-tokens/"          target="_blank" rel="noopener">Token-Tokens</a>
+    <a href="https://hatsquickpad.netlify.app/"                  target="_blank" rel="noopener">Quick-Pad</a>
+    <a href="https://hattyhats.github.io/local-cast/"            target="_blank" rel="noopener">Local-Cast</a>
+    <a href="https://data-phone-app.onrender.com/"               target="_blank" rel="noopener">Data-Phone</a>
   </nav>
   <div id="soundBtns">
     <button id="musicBtn" title="Toggle Music">&#9834; MUSIC ON</button>
@@ -1087,6 +1087,21 @@
       <div class="feedback-msg" id="feedbackMsg"></div>
       <div class="fact-box" id="factBox"></div>
     </div>
+  </div>
+</div>
+
+
+<!-- VOI INFO MODAL -->
+<div class="q-overlay" id="infoOverlay">
+  <div class="q-modal" style="max-width: 500px; text-align: left; padding: 24px;">
+    <h2 style="color: var(--accent); margin-top: 0; font-family: 'Orbitron', sans-serif;">WHAT IS VOI NETWORK?</h2>
+    <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); line-height: 1.6;">
+      <strong>Voi Network</strong> is a user-centric, Layer-1 blockchain built for mass adoption. It focuses on empowering communities rather than just extracting value.
+    </p>
+    <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--text); line-height: 1.6;">
+      Unlike traditional blockchains where early investors hold all the power, Voi allocates a massive portion of its tokenomics directly to ecosystem builders, node runners, and users. It's designed to be fast, cheap, and fiercely community-owned.
+    </p>
+    <button class="cyber-btn" id="closeInfoBtn" style="margin-top: 20px; width: 100%;">RESUME MISSION</button>
   </div>
 </div>
 
@@ -1263,74 +1278,83 @@ function startBgMaze(cid = 'bgMazeCanvas') {
   bc.width  = bc.parentElement.offsetWidth  || window.innerWidth;
   bc.height = bc.parentElement.offsetHeight || window.innerHeight;
   var bx = bc.getContext('2d');
-  var BW=13, BH=10;
-  var BC = Math.min(Math.floor(bc.width/BW), Math.floor(bc.height/BH), 55);
+  
+  // High density crazy maze
+  var BW = 35, BH = 20;
+  var BC = Math.max(Math.floor(bc.width/BW), Math.floor(bc.height/BH), 30);
   var OX = Math.floor((bc.width  - BW*BC) / 2);
   var OY = Math.floor((bc.height - BH*BC) / 2);
-  // Build small maze iteratively
-  var vis  = Array.from({length:BH}, function(){return new Array(BW).fill(false);});
-  var bmaze= Array.from({length:BH}, function(){return Array.from({length:BW}, function(){return {right:true,bottom:true};});});
-  var stk=[{x:0,y:0}]; vis[0][0]=true;
-  while(stk.length){
-    var cur=stk[stk.length-1]; var scx=cur.x, scy=cur.y;
-    var dirs=[{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}]
-      .filter(function(d){var nx=scx+d.dx,ny=scy+d.dy;return nx>=0&&nx<BW&&ny>=0&&ny<BH&&!vis[ny][nx];})
-      .sort(function(){return Math.random()-0.5;});
-    if(!dirs.length){stk.pop();continue;}
-    var d=dirs[0]; var nx=scx+d.dx, ny=scy+d.dy;
-    if(d.dx===1)  bmaze[scy][scx].right=false;
-    if(d.dx===-1) bmaze[scy][nx].right=false;
-    if(d.dy===1)  bmaze[scy][scx].bottom=false;
-    if(d.dy===-1) bmaze[ny][scx].bottom=false;
-    vis[ny][nx]=true; stk.push({x:nx,y:ny});
+  
+  // Build static maze structure
+  var vis = Array.from({length:BH}, () => new Array(BW).fill(false));
+  var bmaze = Array.from({length:BH}, () => Array.from({length:BW}, () => ({right:true, bottom:true})));
+  var stk = [{x:0, y:0}]; vis[0][0]=true;
+  while(stk.length) {
+    var cur = stk[stk.length-1];
+    var dirs = [{dx:1,dy:0}, {dx:-1,dy:0}, {dx:0,dy:1}, {dx:0,dy:-1}]
+      .filter(d => {
+        var nx = cur.x+d.dx, ny = cur.y+d.dy;
+        return nx>=0 && nx<BW && ny>=0 && ny<BH && !vis[ny][nx];
+      })
+      .sort(() => Math.random()-0.5);
+    if(!dirs.length) { stk.pop(); continue; }
+    var d = dirs[0], nx = cur.x+d.dx, ny = cur.y+d.dy;
+    if(d.dx===1)  bmaze[cur.y][cur.x].right = false;
+    if(d.dx===-1) bmaze[cur.y][nx].right = false;
+    if(d.dy===1)  bmaze[cur.y][cur.x].bottom = false;
+    if(d.dy===-1) bmaze[ny][cur.x].bottom = false;
+    vis[ny][nx] = true; stk.push({x:nx, y:ny});
   }
-  // BFS to farthest cell to build traversal path
-  var bpar=Array.from({length:BH},function(){return new Array(BW).fill(null);});
-  var bvis=Array.from({length:BH},function(){return new Array(BW).fill(false);});
-  var bq=[{x:0,y:0}]; bvis[0][0]=true; var lastCell={x:0,y:0};
-  while(bq.length){
-    var cell=bq.shift(); lastCell=cell;
-    var cx2=cell.x, cy2=cell.y; var w2=bmaze[cy2][cx2];
-    [{nx:cx2+1,ny:cy2,ok:!w2.right},{nx:cx2-1,ny:cy2,ok:cx2>0&&!bmaze[cy2][cx2-1].right},
-     {nx:cx2,ny:cy2+1,ok:!w2.bottom},{nx:cx2,ny:cy2-1,ok:cy2>0&&!bmaze[cy2-1][cx2].bottom}]
-    .forEach(function(n){if(n.ok&&n.nx>=0&&n.nx<BW&&n.ny>=0&&n.ny<BH&&!bvis[n.ny][n.nx]){bvis[n.ny][n.nx]=true;bpar[n.ny][n.nx]={x:cx2,y:cy2};bq.push({x:n.nx,y:n.ny});}});
-  }
-  var path=[]; var c2=lastCell;
-  while(c2){path.unshift({x:c2.x,y:c2.y}); c2=bpar[c2.y][c2.x];}
-  var pathIdx=0, revealed=new Set();
-  function drawBg(){
-    bx.clearRect(0,0,bc.width,bc.height);
-    revealed.forEach(function(k){
-      var p=k.split(','); var rx=parseInt(p[0]),ry=parseInt(p[1]);
-      bx.fillStyle='rgba(10,22,40,0.30)';
-      bx.fillRect(OX+rx*BC, OY+ry*BC, BC, BC);
-    });
-    bx.strokeStyle='rgba(0,245,255,0.12)'; bx.lineWidth=1.2;
-    for(var y2=0;y2<BH;y2++){for(var x2=0;x2<BW;x2++){
-      if(!revealed.has(x2+','+y2)) continue;
-      var px3=OX+x2*BC, py3=OY+y2*BC, w3=bmaze[y2][x2];
-      if(y2===0){bx.beginPath();bx.moveTo(px3,py3);bx.lineTo(px3+BC,py3);bx.stroke();}
-      if(x2===0){bx.beginPath();bx.moveTo(px3,py3);bx.lineTo(px3,py3+BC);bx.stroke();}
-      if(w3.right){bx.beginPath();bx.moveTo(px3+BC,py3);bx.lineTo(px3+BC,py3+BC);bx.stroke();}
-      if(w3.bottom){bx.beginPath();bx.moveTo(px3,py3+BC);bx.lineTo(px3+BC,py3+BC);bx.stroke();}
-    }}
-    if(pathIdx<path.length){
-      var gp=path[pathIdx];
-      bx.save();
-      bx.shadowColor='#00f5ff'; bx.shadowBlur=8;
-      bx.fillStyle='rgba(0,245,255,0.55)';
-      bx.beginPath(); bx.arc(OX+gp.x*BC+BC/2,OY+gp.y*BC+BC/2,Math.max(3,BC*0.2),0,Math.PI*2); bx.fill();
-      bx.restore();
+
+  // Draw the crazy static maze once
+  bx.clearRect(0,0,bc.width,bc.height);
+  
+  // Draw base glow
+  bx.shadowColor = 'rgba(0, 245, 255, 1)';
+  bx.shadowBlur = 15;
+  bx.strokeStyle = 'rgba(0, 245, 255, 0.4)';
+  bx.lineWidth = 2;
+
+  // Add some purple segments for extreme detail
+  for (let y=0; y<BH; y++) {
+    for (let x=0; x<BW; x++) {
+      var px = OX + x*BC, py = OY + y*BC;
+      var w = bmaze[y][x];
+      
+      if (Math.random() > 0.8) {
+          bx.strokeStyle = 'rgba(150, 0, 255, 0.6)';
+          bx.shadowColor = 'rgba(150, 0, 255, 1)';
+      } else {
+          bx.strokeStyle = 'rgba(0, 245, 255, 0.4)';
+          bx.shadowColor = 'rgba(0, 245, 255, 1)';
+      }
+
+      bx.beginPath();
+      // Only draw some walls to make it look fragmented and complex
+      if (y===0 && Math.random()>0.2) { bx.moveTo(px,py); bx.lineTo(px+BC,py); }
+      if (x===0 && Math.random()>0.2) { bx.moveTo(px,py); bx.lineTo(px,py+BC); }
+      if (w.right && Math.random()>0.2) { bx.moveTo(px+BC,py); bx.lineTo(px+BC,py+BC); }
+      if (w.bottom && Math.random()>0.2) { bx.moveTo(px,py+BC); bx.lineTo(px+BC,py+BC); }
+      bx.stroke();
     }
   }
-  bgMazeTimer=setInterval(function(){
-    if(pathIdx<path.length){revealed.add(path[pathIdx].x+','+path[pathIdx].y);pathIdx++;}
-    else{pathIdx=0;revealed.clear();}
-    drawBg();
-  },85);
+
+  // Draw intense glowing intersection nodes
+  bx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+  for (let i=0; i<80; i++) {
+    let rx = Math.floor(Math.random()*BW);
+    let ry = Math.floor(Math.random()*BH);
+    let px = OX + rx*BC;
+    let py = OY + ry*BC;
+    bx.shadowColor = 'rgba(0, 255, 255, 1)';
+    bx.shadowBlur = 20;
+    bx.beginPath();
+    bx.arc(px, py, Math.random()*3 + 1, 0, Math.PI*2);
+    bx.fill();
+  }
 }
 function stopBgMaze(cid = 'bgMazeCanvas'){
-  if(bgMazeTimer){clearInterval(bgMazeTimer);bgMazeTimer=null;}
+  if(bgMazeTimer){ cancelAnimationFrame(bgMazeTimer); bgMazeTimer=null; }
   var bc=document.getElementById(cid);
   if(bc){bc.getContext('2d').clearRect(0,0,bc.width,bc.height);}
 }
@@ -2909,9 +2933,6 @@ function showScreen(name) {
   state.screen = name;
   // Matrix rain: only during gameplay
   if(typeof showMatrix==='function') { if(name==='game') showMatrix(); else hideMatrix(); }
-  // Start/stop bg maze animation
-  if(name==='start') startBgMaze();
-  else stopBgMaze();
   // Show partner buttons only during gameplay
   const gpb = document.getElementById('gamePartnerBtns');
   if(gpb) gpb.classList.toggle('show', name==='game');
@@ -3362,6 +3383,30 @@ async function animateLoadBar() {
   menu.addEventListener('click', function(e) { e.stopPropagation(); });
 })();
 
+
+  // INFO MODAL LOGIC
+  document.getElementById('infoBtn').addEventListener('click', function() {
+    // Pause game
+    if (state.screen === 'game') {
+      if (state.animFrame) cancelAnimationFrame(state.animFrame);
+      state.animFrame = null;
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      state.timerInterval = null;
+      document.getElementById('canvasWrapper').style.filter = 'blur(10px)';
+    }
+    document.getElementById('infoOverlay').classList.add('show');
+  });
+
+  document.getElementById('closeInfoBtn').addEventListener('click', function() {
+    document.getElementById('infoOverlay').classList.remove('show');
+    // Resume game
+    if (state.screen === 'game') {
+      document.getElementById('canvasWrapper').style.filter = 'none';
+      startTimer();
+      state.lastMoveTime = Date.now();
+      gameLoop();
+    }
+  });
 </script>
 </body>
 </html>
